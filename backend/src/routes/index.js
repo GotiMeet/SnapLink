@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Root API router that composes the versioned route modules.
+ *
+ * @module routes/index
+ */
 import { Router } from 'express';
 
 import healthRoutes from './health.routes.js';
