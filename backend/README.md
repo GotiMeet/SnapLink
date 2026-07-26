@@ -1,14 +1,19 @@
 # SnapLink — Backend
 
-Backend foundation for **SnapLink**, a URL shortening service, built with Node.js, Express, and MongoDB following an MVC architecture.
+Backend for **SnapLink**, a URL shortening service, built with Node.js, Express, and MongoDB following an MVC architecture.
 
-> This milestone establishes the project foundation only. Authentication, URL shortening, database models, and business logic are intentionally **not** implemented yet.
+> Implemented so far: project foundation, database schema, and the authentication system. URL shortening, analytics, and QR codes are **not** implemented yet.
 
 ## Tech Stack
 
 - **Node.js** with **ES Modules**
 - **Express.js** — web framework
 - **MongoDB** with **Mongoose** — database & ODM
+- **JWT** (`jsonwebtoken`) — access + refresh token authentication
+- **bcrypt** — password hashing
+- **express-validator** — request validation
+- **google-auth-library** — Google OAuth ID-token verification
+- **nodemailer** — email delivery (verification & password reset)
 - **Helmet**, **CORS**, **Cookie Parser** — security & request handling
 - **Morgan** — HTTP request logging (development only)
 - **dotenv** — environment variable management
@@ -20,7 +25,7 @@ Backend foundation for **SnapLink**, a URL shortening service, built with Node.j
 
 ## Installation
 
-1. Clone the repository and move into the backend directory:
+1. Move into the backend directory:
 
    ```bash
    cd backend
@@ -40,71 +45,73 @@ Backend foundation for **SnapLink**, a URL shortening service, built with Node.j
 
 ## Environment Variables
 
-Configure the following variables in your `.env` file:
-
-| Variable      | Description                                   | Required | Default                              |
-| ------------- | --------------------------------------------- | -------- | ------------------------------------ |
-| `PORT`        | Port the server listens on                    | No       | `5000`                               |
-| `NODE_ENV`    | Runtime environment (`development`/`production`) | No    | `development`                        |
-| `MONGO_URI`   | MongoDB connection string                     | **Yes**  | —                                    |
-| `CORS_ORIGIN` | Allowed CORS origin(s)                        | No       | `*`                                  |
-
 The application fails fast on startup if a required variable is missing.
+
+| Variable                        | Description                                          | Required | Default                        |
+| ------------------------------- | ---------------------------------------------------- | -------- | ------------------------------ |
+| `PORT`                          | Port the server listens on                           | No       | `5000`                         |
+| `NODE_ENV`                      | `development` / `production`                          | No       | `development`                  |
+| `CLIENT_URL`                    | Frontend base URL (used in email links)              | No       | `http://localhost:3000`        |
+| `MONGO_URI`                     | MongoDB connection string                            | **Yes**  | —                              |
+| `CORS_ORIGIN`                   | Allowed CORS origin(s)                               | No       | `*`                            |
+| `BCRYPT_SALT_ROUNDS`            | bcrypt cost factor                                   | No       | `12`                           |
+| `JWT_ACCESS_SECRET`             | Secret for access tokens                             | **Yes**  | —                              |
+| `JWT_REFRESH_SECRET`            | Secret for refresh tokens                            | **Yes**  | —                              |
+| `JWT_EMAIL_VERIFICATION_SECRET` | Secret for email-verification tokens                 | **Yes**  | —                              |
+| `JWT_PASSWORD_RESET_SECRET`     | Base secret for password-reset tokens                | **Yes**  | —                              |
+| `JWT_ACCESS_TTL`                | Access token lifetime (seconds)                      | No       | `900` (15m)                    |
+| `JWT_REFRESH_TTL`               | Refresh token lifetime (seconds)                     | No       | `604800` (7d)                  |
+| `JWT_EMAIL_VERIFICATION_TTL`    | Verification token lifetime (seconds)                | No       | `86400` (1d)                   |
+| `JWT_PASSWORD_RESET_TTL`        | Reset token lifetime (seconds)                       | No       | `900` (15m)                    |
+| `COOKIE_SECURE`                 | Send cookies only over HTTPS                         | No       | `true` in production           |
+| `COOKIE_SAME_SITE`              | Cookie `SameSite` policy                             | No       | `lax`                          |
+| `COOKIE_DOMAIN`                 | Cookie domain scope                                  | No       | —                              |
+| `GOOGLE_CLIENT_ID`              | Google OAuth client ID (required for Google login)   | No\*     | —                              |
+| `SMTP_HOST`                     | SMTP host (required for email delivery in production)| No\*     | —                              |
+| `SMTP_PORT`                     | SMTP port                                            | No       | `587`                          |
+| `SMTP_SECURE`                   | Use TLS on connect                                   | No       | `false`                        |
+| `SMTP_USER` / `SMTP_PASS`       | SMTP credentials                                     | No       | —                              |
+| `EMAIL_FROM`                    | From address for outgoing email                      | No       | `SnapLink <no-reply@…>`        |
+
+\* Feature-specific: without `GOOGLE_CLIENT_ID`, Google login returns a configuration error; without SMTP, emails are logged to the console in development and error in production.
 
 ## Run Commands
 
-Start the server in development mode (auto-restart via nodemon):
-
 ```bash
-npm run dev
+npm run dev    # development (nodemon auto-restart)
+npm start      # production
 ```
 
-Start the server in production mode:
+## Authentication Endpoints
 
-```bash
-npm start
-```
+All routes are prefixed with `/api/v1`. Access and refresh tokens are issued as HTTP-only cookies.
 
-## Health Check
+| Method | Endpoint                | Protected | Description                                        |
+| ------ | ----------------------- | --------- | -------------------------------------------------- |
+| POST   | `/auth/register`        | No        | Register a local account; sends a verification email |
+| POST   | `/auth/verify-email`    | No        | Verify email using the token from the email link   |
+| POST   | `/auth/login`           | No        | Log in; sets access + refresh cookies              |
+| POST   | `/auth/refresh`         | No        | Rotate tokens using the refresh cookie             |
+| POST   | `/auth/logout`          | No        | Revoke the current session and clear cookies       |
+| POST   | `/auth/forgot-password` | No        | Request a password-reset email                     |
+| POST   | `/auth/reset-password`  | No        | Set a new password using the reset token           |
+| POST   | `/auth/google`          | No        | Log in / register with a Google ID token           |
+| GET    | `/auth/me`              | Yes       | Return the currently authenticated user            |
 
-Once running, verify the server:
-
-```bash
-curl http://localhost:5000/api/v1/health
-```
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "message": "SnapLink Backend is running",
-  "data": {}
-}
-```
+Email verification and password-reset links point to `CLIENT_URL` (the frontend), which then calls the corresponding endpoint with the token.
 
 ## API Response Format
-
-All responses follow a consistent structure.
 
 **Success**
 
 ```json
-{
-  "success": true,
-  "message": "Success",
-  "data": {}
-}
+{ "success": true, "message": "Success", "data": {} }
 ```
 
 **Error**
 
 ```json
-{
-  "success": false,
-  "message": "Something went wrong",
-  "errors": []
-}
+{ "success": false, "message": "Something went wrong", "errors": [] }
 ```
 
 ## Project Structure
@@ -113,26 +120,17 @@ All responses follow a consistent structure.
 backend/
 │
 ├── src/
-│   ├── config/            # Environment config & database connection
-│   │   ├── db.js
-│   │   └── env.js
-│   ├── controllers/       # Thin request handlers
-│   │   └── health.controller.js
-│   ├── middleware/        # Global error handler & 404 handler
-│   │   ├── errorHandler.js
-│   │   └── notFound.js
-│   ├── models/            # Mongoose models (added in later milestones)
-│   ├── routes/            # API route definitions
-│   │   ├── health.routes.js
-│   │   └── index.js
-│   ├── services/          # Business logic (added in later milestones)
-│   ├── utils/             # Reusable helpers (responses, errors, async wrapper)
-│   │   ├── ApiError.js
-│   │   ├── ApiResponse.js
-│   │   └── asyncHandler.js
-│   ├── validators/        # Request validation schemas (added in later milestones)
+│   ├── config/            # env config & database connection
+│   ├── constants/         # frozen enums (status, role, tokenType, …)
+│   ├── controllers/       # thin request handlers (auth.controller.js)
+│   ├── middleware/         # errorHandler, notFound, authenticate, validate
+│   ├── models/            # user, shortUrl, analytics, session
+│   ├── routes/            # versioned routers (index, auth, health)
+│   ├── services/          # business logic (auth, token, session, email, google)
+│   ├── utils/             # ApiResponse, ApiError, asyncHandler, password, crypto, cookie, sanitizeUser
+│   ├── validators/        # express-validator chains (auth.validator.js)
 │   ├── app.js             # Express app configuration
-│   └── server.js          # Entry point: DB connection & server startup
+│   └── server.js          # entry point: DB connection & server startup
 │
 ├── .env.example
 ├── .gitignore
@@ -142,8 +140,9 @@ backend/
 
 ## Architecture Notes
 
-- **MVC** with a dedicated service layer — controllers stay thin, business logic lives in `services/`.
+- **MVC + services** — controllers stay thin; business logic lives in `services/`.
 - **API versioning** — all routes are mounted under `/api/v1`.
-- **Centralized configuration** — environment access is isolated in `config/env.js`; nothing is hardcoded.
-- **Consistent responses** — helpers in `utils/ApiResponse.js` standardize every payload.
-- **Centralized error handling** — a custom `ApiError` class plus a global error handler produce uniform error responses.
+- **JWT auth** — short-lived access tokens (15m) and rotating refresh tokens (7d), both in HTTP-only cookies.
+- **Sessions** — each login creates a `Session` document storing only a hashed refresh token, so multiple concurrent sessions are supported and refresh tokens are never persisted in plain text.
+- **Password security** — bcrypt hashing (12 rounds); email verification is required before local login.
+- **Centralized configuration & error handling** — env access is isolated in `config/env.js`; a custom `ApiError` and global handler produce uniform responses.
