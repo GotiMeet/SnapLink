@@ -3,8 +3,9 @@
  *
  * BUSINESS PURPOSE:
  * Runs the public redirect flow for an incoming short code: lookup, the status
- * gate, the password gate for private links, and click accounting before the
- * visitor reaches the destination.
+ * gate, the password gate for private links, and visit accounting before the
+ * visitor reaches the destination. A visit only reaches analytics once every
+ * gate has passed, so refused requests never appear in a report.
  *
  * @module services/redirect.service
  */
@@ -13,26 +14,42 @@ import { URL_STATUS } from '../constants/status.js';
 import { VISIBILITY } from '../constants/visibility.js';
 import ApiError from '../utils/ApiError.js';
 import { comparePassword } from '../utils/password.js';
+import * as analyticsService from './analytics.service.js';
 
 const LINK_NOT_FOUND_MESSAGE = 'Short link not found';
 
 /**
- * Records a visit without reading the document back.
- * A single atomic update keeps the counter correct under concurrent traffic.
- * @function registerClick
+ * Stamps when the link was last used, without reading the document back.
+ * Only the timestamp lives here; how often a link was used is counted by the
+ * analytics collection, which is the single source of that figure.
+ * @function touchLastAccessed
  */
-const registerClick = (shortUrlId) =>
-  ShortUrl.updateOne(
-    { _id: shortUrlId },
-    { $inc: { clickCount: 1 }, $set: { lastAccessedAt: new Date() } }
-  );
+const touchLastAccessed = (shortUrlId) =>
+  ShortUrl.updateOne({ _id: shortUrlId }, { $set: { lastAccessedAt: new Date() } });
+
+/**
+ * Folds the visit into the day's analytics.
+ * Reporting is secondary to reaching the destination, so a failure here is
+ * logged and swallowed rather than turned into an error for the visitor.
+ * @function recordVisitSafely
+ */
+const recordVisitSafely = async (shortUrl, visit) => {
+  try {
+    await analyticsService.recordVisit({ shortUrl, ...visit });
+  } catch (error) {
+    console.error(
+      `Failed to record analytics for short URL ${shortUrl._id}: ${error?.message || error}`
+    );
+  }
+};
 
 /**
  * Resolves a short code to its destination, enforcing every access rule.
- * The link password is only supplied by the unlock endpoint.
+ * The link password is only supplied by the unlock endpoint, and the visit
+ * context carries what analytics classifies the visitor by.
  * @function resolveShortLink
  */
-export const resolveShortLink = async ({ shortCode, password }) => {
+export const resolveShortLink = async ({ shortCode, password, visit = {} }) => {
   const shortUrl = await ShortUrl.findOne({ shortCode }).select('+password');
 
   // Only a live link resolves. The stored status already carries the effective
@@ -55,7 +72,8 @@ export const resolveShortLink = async ({ shortCode, password }) => {
     }
   }
 
-  await registerClick(shortUrl._id);
+  await touchLastAccessed(shortUrl._id);
+  await recordVisitSafely(shortUrl, visit);
 
   return shortUrl.originalUrl;
 };

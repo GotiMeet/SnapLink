@@ -9,6 +9,7 @@ import healthRoutes from './health.routes.js';
 import authRoutes from './auth.routes.js';
 import projectRoutes from './project.routes.js';
 import urlRoutes from './url.routes.js';
+import analyticsRoutes from './analytics.routes.js';
 
 const router = Router();
 
@@ -16,5 +17,6 @@ router.use('/health', healthRoutes);
 router.use('/auth', authRoutes);
 router.use('/projects', projectRoutes);
 router.use('/urls', urlRoutes);
+router.use('/analytics', analyticsRoutes);
 
 export default router;
