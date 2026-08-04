@@ -20,6 +20,7 @@ import morgan from 'morgan';
 
 import config from './config/env.js';
 import apiRoutes from './routes/index.js';
+import redirectRoutes from './routes/redirect.routes.js';
 import notFoundMiddleware from './middleware/notFound.middleware.js';
 import errorMiddleware from './middleware/error.middleware.js';
 
@@ -44,6 +45,10 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use(config.apiPrefix, apiRoutes);
+
+// Short links resolve from the application root and are registered after the API
+// so a short code can never shadow a versioned endpoint.
+app.use(redirectRoutes);
 
 // Unmatched routes fall through to the 404 handler, then the global error handler
 // (registered last so it can catch errors from every preceding layer).

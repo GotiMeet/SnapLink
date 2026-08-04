@@ -4,10 +4,10 @@
  * @module constants/status
  */
 
-// Operational status of a shortened URL.
+// Effective state of a shortened URL. DELETED_LINK is set when the owner removes
+// the link itself, DELETED_PROJECT when its parent project is soft-deleted.
 export const URL_STATUS = Object.freeze({
   ACTIVE: 'active',
-  EXPIRED: 'expired',
-  RECYCLE_BIN: 'recycle_bin',
-  DISABLED: 'disabled',
+  DELETED_LINK: 'deleted_link',
+  DELETED_PROJECT: 'deleted_project',
 });

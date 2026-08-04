@@ -5,10 +5,21 @@ import { VISIBILITY } from '../constants/visibility.js';
 
 const shortUrlSchema = new mongoose.Schema(
   {
+    project: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Project',
+      required: [true, 'Project is required'],
+    },
     owner: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
       required: [true, 'Owner is required'],
+    },
+    title: {
+      type: String,
+      required: [true, 'Title is required'],
+      trim: true,
+      maxlength: [150, 'Title cannot exceed 150 characters'],
     },
     originalUrl: {
       type: String,
@@ -37,12 +48,24 @@ const shortUrlSchema = new mongoose.Schema(
       enum: Object.values(VISIBILITY),
       default: VISIBILITY.PUBLIC,
     },
+    // Only set for private links, stored as a bcrypt hash.
+    // Hidden by default; must be explicitly selected when verifying access.
+    password: {
+      type: String,
+      select: false,
+    },
     status: {
       type: String,
       enum: Object.values(URL_STATUS),
       default: URL_STATUS.ACTIVE,
     },
-    expiresAt: {
+    // Scheduling markers are stored only; the milestone that acts on them adds
+    // the background job that flips a link live or removes it.
+    scheduledLiveAt: {
+      type: Date,
+      default: null,
+    },
+    scheduledDeleteAt: {
       type: Date,
       default: null,
     },
@@ -66,11 +89,13 @@ const shortUrlSchema = new mongoose.Schema(
   }
 );
 
-// Supports the dashboard listing: a user's active URLs, most recent first.
-shortUrlSchema.index(
-  { owner: 1, createdAt: -1 },
-  { partialFilterExpression: { deletedAt: null } }
-);
+// Supports the dashboard and recycle-bin listings, which select a user's links by
+// status and show the most recently updated first.
+shortUrlSchema.index({ owner: 1, status: 1, updatedAt: -1 });
+
+// Supports listing a single project's links and the status propagation that runs
+// when a project is deleted or restored.
+shortUrlSchema.index({ project: 1, status: 1, updatedAt: -1 });
 
 const ShortUrl = mongoose.model('ShortUrl', shortUrlSchema);
 
