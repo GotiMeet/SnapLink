@@ -74,11 +74,8 @@ const shortUrlSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    clickCount: {
-      type: Number,
-      default: 0,
-      min: [0, 'Click count cannot be negative'],
-    },
+    // Visit totals are not stored here: the analytics collection aggregates them
+    // per day and is the only record of how often a link was used.
     lastAccessedAt: {
       type: Date,
       default: null,

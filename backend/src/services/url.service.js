@@ -25,6 +25,7 @@ import {
   claimActiveProject,
   getProjectSummary,
 } from './project.service.js';
+import { getLifetimeTotals } from './analytics.service.js';
 
 const URL_NOT_FOUND_MESSAGE = 'Short URL not found';
 const ALIAS_TAKEN_MESSAGE = 'This alias is already taken';
@@ -58,6 +59,32 @@ const projectUnavailableError = (message, project) =>
       project,
     },
   ]);
+
+/**
+ * Attaches the lifetime visit total that analytics now owns, so a link still
+ * reports a click count without the schema storing one.
+ * The figure covers QR scans as well, which is what the stored counter always
+ * did, and a link with no recorded visit yet reports zero.
+ * @function withLifetimeTotals
+ */
+const withLifetimeTotals = async (shortUrls) => {
+  const totals = await getLifetimeTotals(shortUrls.map((shortUrl) => shortUrl._id));
+
+  return shortUrls.map((shortUrl) => ({
+    ...shortUrl.toObject(),
+    clickCount: totals.get(String(shortUrl._id))?.totalVisits || 0,
+  }));
+};
+
+/**
+ * Single-document form of withLifetimeTotals.
+ * @function withLifetimeTotal
+ */
+const withLifetimeTotal = async (shortUrl) => {
+  const [shortUrlWithTotal] = await withLifetimeTotals([shortUrl]);
+
+  return shortUrlWithTotal;
+};
 
 /**
  * Loads a short URL that belongs to the given owner and sits in the expected
@@ -211,7 +238,8 @@ export const createUrl = async ({
       createdUrl = shortUrl;
     });
 
-    return createdUrl;
+    // A link that has just been created cannot have been visited yet.
+    return { ...createdUrl.toObject(), clickCount: 0 };
   } catch (error) {
     // The unique index is the final guard when two requests claim an alias at once.
     if (error?.code === 11000) {
@@ -231,7 +259,7 @@ export const createUrl = async ({
  * they reappear with their project.
  * @function getUrls
  */
-export const getUrls = ({ ownerId, projectId, deleted = false }) => {
+export const getUrls = async ({ ownerId, projectId, deleted = false }) => {
   const filter = {
     owner: ownerId,
     status: deleted ? URL_STATUS.DELETED_LINK : URL_STATUS.ACTIVE,
@@ -241,14 +269,18 @@ export const getUrls = ({ ownerId, projectId, deleted = false }) => {
     filter.project = projectId;
   }
 
-  return ShortUrl.find(filter).sort({ updatedAt: -1 });
+  const shortUrls = await ShortUrl.find(filter).sort({ updatedAt: -1 });
+
+  // One aggregation covers the whole page rather than one query per link.
+  return withLifetimeTotals(shortUrls);
 };
 
 /**
  * Returns a single active short URL owned by the requester.
  * @function getUrlById
  */
-export const getUrlById = ({ urlId, ownerId }) => findOwnedUrl({ urlId, ownerId });
+export const getUrlById = async ({ urlId, ownerId }) =>
+  withLifetimeTotal(await findOwnedUrl({ urlId, ownerId }));
 
 /**
  * Updates an active short URL's editable fields.
@@ -310,7 +342,7 @@ export const updateUrl = async ({
 
   await shortUrl.save();
 
-  return shortUrl;
+  return withLifetimeTotal(shortUrl);
 };
 
 /**
@@ -324,7 +356,7 @@ export const softDeleteUrl = async ({ urlId, ownerId }) => {
   shortUrl.status = URL_STATUS.DELETED_LINK;
   await shortUrl.save();
 
-  return shortUrl;
+  return withLifetimeTotal(shortUrl);
 };
 
 /**
@@ -375,7 +407,7 @@ export const restoreUrl = async ({ urlId, ownerId }) => {
     shortUrl.status = URL_STATUS.ACTIVE;
     shortUrl.deletedAt = null;
 
-    return { shortUrl, project };
+    return { shortUrl: await withLifetimeTotal(shortUrl), project };
   } finally {
     await session.endSession();
   }

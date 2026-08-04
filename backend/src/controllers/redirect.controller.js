@@ -13,6 +13,18 @@ import { sendSuccess } from '../utils/ApiResponse.js';
 import * as redirectService from '../services/redirect.service.js';
 
 /**
+ * Collects what analytics classifies a visit by. Nothing here is stored as sent:
+ * the service reduces each value to a bucket before it reaches the database.
+ * @function getVisitContext
+ */
+const getVisitContext = (req) => ({
+  source: req.query.src,
+  userAgent: req.headers['user-agent'],
+  referrer: req.headers.referer || req.headers.referrer,
+  language: req.headers['accept-language'],
+});
+
+/**
  * Resolves a short code and redirects the visitor to the destination.
  * @function redirectToOriginalUrl
  * @route GET /:shortCode
@@ -21,6 +33,7 @@ import * as redirectService from '../services/redirect.service.js';
 export const redirectToOriginalUrl = asyncHandler(async (req, res) => {
   const originalUrl = await redirectService.resolveShortLink({
     shortCode: req.params.shortCode,
+    visit: getVisitContext(req),
   });
 
   // A temporary redirect keeps clients coming back so visits stay countable.
@@ -37,6 +50,7 @@ export const unlockShortLink = asyncHandler(async (req, res) => {
   const originalUrl = await redirectService.resolveShortLink({
     shortCode: req.params.shortCode,
     password: req.body.password,
+    visit: getVisitContext(req),
   });
 
   return sendSuccess(res, {
