@@ -36,6 +36,25 @@ const PROJECT_DELETED_MESSAGE =
   'This link cannot be restored yet because its project is deleted';
 const PROJECT_UNAVAILABLE_MESSAGE =
   'This link cannot go live because its project is deleted';
+const TITLE_TAKEN_MESSAGE = 'A link with this title already exists in this project';
+const RESTORE_TITLE_TAKEN_MESSAGE =
+  'Another link in this project already uses this title, rename it before restoring this one';
+
+/**
+ * Maps a unique-index violation onto the conflict it actually represents.
+ * Two indexes can raise it, so the violated key tells the alias apart from the
+ * per-project title.
+ * @function toWriteConflict
+ */
+const toWriteConflict = (error, titleMessage = TITLE_TAKEN_MESSAGE) => {
+  if (error?.code !== 11000) {
+    return error;
+  }
+
+  return error.keyPattern?.title
+    ? new ApiError(409, titleMessage)
+    : new ApiError(409, ALIAS_TAKEN_MESSAGE);
+};
 
 /**
  * Reports whether a supplied link password carries actual content.
@@ -241,12 +260,9 @@ export const createUrl = async ({
     // A link that has just been created cannot have been visited yet.
     return { ...createdUrl.toObject(), clickCount: 0 };
   } catch (error) {
-    // The unique index is the final guard when two requests claim an alias at once.
-    if (error?.code === 11000) {
-      throw new ApiError(409, ALIAS_TAKEN_MESSAGE);
-    }
-
-    throw error;
+    // The unique indexes are the final guard when two requests claim the same
+    // alias, or the same title inside one project, at once.
+    throw toWriteConflict(error);
   } finally {
     await session.endSession();
   }
@@ -281,6 +297,18 @@ export const getUrls = async ({ ownerId, projectId, deleted = false }) => {
  */
 export const getUrlById = async ({ urlId, ownerId }) =>
   withLifetimeTotal(await findOwnedUrl({ urlId, ownerId }));
+
+/**
+ * Returns the short code of an active link the requester owns.
+ * Separate from getUrlById so a caller that only needs the code does not pay for
+ * the lifetime total that endpoint aggregates.
+ * @function getOwnedShortCode
+ */
+export const getOwnedShortCode = async ({ urlId, ownerId }) => {
+  const { shortCode } = await findOwnedUrl({ urlId, ownerId });
+
+  return shortCode;
+};
 
 /**
  * Updates an active short URL's editable fields.
@@ -340,7 +368,11 @@ export const updateUrl = async ({
     throw new ApiError(400, PASSWORD_REQUIRED_MESSAGE);
   }
 
-  await shortUrl.save();
+  try {
+    await shortUrl.save();
+  } catch (error) {
+    throw toWriteConflict(error);
+  }
 
   return withLifetimeTotal(shortUrl);
 };
@@ -397,11 +429,16 @@ export const restoreUrl = async ({ urlId, ownerId }) => {
       }
 
       // An idempotent update keeps the restore correct if the transaction retries.
-      await ShortUrl.updateOne(
-        { _id: shortUrl._id, owner: ownerId, status: URL_STATUS.DELETED_LINK },
-        { $set: { status: URL_STATUS.ACTIVE, deletedAt: null } },
-        { session }
-      );
+      // The title was free while this link sat deleted; another may hold it now.
+      try {
+        await ShortUrl.updateOne(
+          { _id: shortUrl._id, owner: ownerId, status: URL_STATUS.DELETED_LINK },
+          { $set: { status: URL_STATUS.ACTIVE, deletedAt: null } },
+          { session }
+        );
+      } catch (error) {
+        throw toWriteConflict(error, RESTORE_TITLE_TAKEN_MESSAGE);
+      }
     });
 
     shortUrl.status = URL_STATUS.ACTIVE;

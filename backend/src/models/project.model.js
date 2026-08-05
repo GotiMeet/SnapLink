@@ -30,6 +30,13 @@ projectSchema.index(
   { partialFilterExpression: { deletedAt: null } }
 );
 
+// A title is claimed only while the project is live, so deleting a project frees
+// its title for reuse and restoring one can find it taken again.
+projectSchema.index(
+  { owner: 1, title: 1 },
+  { unique: true, partialFilterExpression: { deletedAt: null } }
+);
+
 const Project = mongoose.model('Project', projectSchema);
 
 export default Project;

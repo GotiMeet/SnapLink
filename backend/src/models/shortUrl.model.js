@@ -94,6 +94,14 @@ shortUrlSchema.index({ owner: 1, status: 1, updatedAt: -1 });
 // when a project is deleted or restored.
 shortUrlSchema.index({ project: 1, status: 1, updatedAt: -1 });
 
+// A title is claimed only while the link is live, so a deleted link frees its
+// title for reuse inside the same project. The same title stays available in
+// every other project.
+shortUrlSchema.index(
+  { project: 1, title: 1 },
+  { unique: true, partialFilterExpression: { status: URL_STATUS.ACTIVE } }
+);
+
 const ShortUrl = mongoose.model('ShortUrl', shortUrlSchema);
 
 export default ShortUrl;

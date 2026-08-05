@@ -17,6 +17,17 @@ import { URL_STATUS } from '../constants/status.js';
 import ApiError from '../utils/ApiError.js';
 
 const PROJECT_NOT_FOUND_MESSAGE = 'Project not found';
+const TITLE_TAKEN_MESSAGE = 'A project with this title already exists';
+const RESTORE_TITLE_TAKEN_MESSAGE =
+  'Another project already uses this title, rename it before restoring this one';
+
+/**
+ * Maps a unique-index violation onto the conflict it represents, and leaves any
+ * other failure untouched. The index is what makes the check race-safe.
+ * @function toTitleConflict
+ */
+const toTitleConflict = (error, message = TITLE_TAKEN_MESSAGE) =>
+  error?.code === 11000 ? new ApiError(409, message) : error;
 
 /**
  * Loads a project that belongs to the given owner, or throws.
@@ -101,11 +112,17 @@ export const claimActiveProject = ({ projectId, ownerId, session }) =>
   );
 
 /**
- * Creates a project for the owner.
+ * Creates a project for the owner. Titles are unique among that owner's live
+ * projects.
  * @function createProject
  */
-export const createProject = ({ ownerId, title }) =>
-  Project.create({ owner: ownerId, title });
+export const createProject = async ({ ownerId, title }) => {
+  try {
+    return await Project.create({ owner: ownerId, title });
+  } catch (error) {
+    throw toTitleConflict(error);
+  }
+};
 
 /**
  * Lists the owner's active projects, or their soft-deleted ones,
@@ -136,7 +153,11 @@ export const updateProject = async ({ projectId, ownerId, title }) => {
     project.title = title;
   }
 
-  await project.save();
+  try {
+    await project.save();
+  } catch (error) {
+    throw toTitleConflict(error);
+  }
 
   return project;
 };
@@ -175,7 +196,13 @@ export const restoreProject = ({ projectId, ownerId }) =>
     deleted: true,
     apply: async (project, session) => {
       project.deletedAt = null;
-      await project.save({ session });
+
+      // The title was free while this project sat deleted; another may hold it now.
+      try {
+        await project.save({ session });
+      } catch (error) {
+        throw toTitleConflict(error, RESTORE_TITLE_TAKEN_MESSAGE);
+      }
 
       await ShortUrl.updateMany(
         { project: project._id, status: URL_STATUS.DELETED_PROJECT },

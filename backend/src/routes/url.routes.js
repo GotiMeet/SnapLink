@@ -54,6 +54,14 @@ router.get('/alias-availability/:alias', aliasParamValidator, validateMiddleware
 router.get('/:urlId', urlIdParamValidator, validateMiddleware, urlController.getUrlById);
 
 /**
+ * Returns the QR code image for a short URL.
+ * @name GET /api/v1/urls/:urlId/qr
+ * @function
+ * @memberof module:routes/url.routes
+ */
+router.get('/:urlId/qr', urlIdParamValidator, validateMiddleware, urlController.getUrlQrCode);
+
+/**
  * Updates a short URL.
  * @name PATCH /api/v1/urls/:urlId
  * @function
