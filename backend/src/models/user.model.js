@@ -62,10 +62,12 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-// Speeds up OAuth sign-in lookups; only indexes accounts linked to a provider.
+// The provider id identifies an account on its own, so it is what Google sign-in
+// matches on first. Only accounts linked to a provider are indexed, and the
+// unique constraint keeps one external identity from reaching two accounts.
 userSchema.index(
-  { authProvider: 1, providerId: 1 },
-  { partialFilterExpression: { providerId: { $type: 'string' } } }
+  { providerId: 1 },
+  { unique: true, partialFilterExpression: { providerId: { $type: 'string' } } }
 );
 
 const User = mongoose.model('User', userSchema);

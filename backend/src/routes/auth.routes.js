@@ -15,6 +15,9 @@ import {
   forgotPasswordValidator,
   resetPasswordValidator,
   googleAuthValidator,
+  updateProfileValidator,
+  setPasswordValidator,
+  changePasswordValidator,
 } from '../validators/auth.validator.js';
 
 const router = Router();
@@ -90,5 +93,29 @@ router.post('/google', googleAuthValidator, validateMiddleware, authController.g
  * @memberof module:routes/auth.routes
  */
 router.get('/me', authMiddleware, authController.me);
+
+/**
+ * Updates the authenticated user's profile.
+ * @name PATCH /api/v1/auth/me
+ * @function
+ * @memberof module:routes/auth.routes
+ */
+router.patch('/me', authMiddleware, updateProfileValidator, validateMiddleware, authController.updateProfile);
+
+/**
+ * Gives an account without a password its first one.
+ * @name POST /api/v1/auth/set-password
+ * @function
+ * @memberof module:routes/auth.routes
+ */
+router.post('/set-password', authMiddleware, setPasswordValidator, validateMiddleware, authController.setPassword);
+
+/**
+ * Replaces the authenticated user's existing password.
+ * @name POST /api/v1/auth/change-password
+ * @function
+ * @memberof module:routes/auth.routes
+ */
+router.post('/change-password', authMiddleware, changePasswordValidator, validateMiddleware, authController.changePassword);
 
 export default router;

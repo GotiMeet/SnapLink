@@ -26,6 +26,13 @@ import errorMiddleware from './middleware/error.middleware.js';
 
 const app = express();
 
+// Behind the platform's reverse proxy, the socket address is the proxy's own.
+// Trusting exactly one hop makes req.ip the address that proxy recorded, which
+// is what sessions are stamped with. Trusting every hop instead would let a
+// client forge the whole chain, and locally, with no proxy in front, this still
+// resolves to the socket address.
+app.set('trust proxy', 1);
+
 // Security headers and CORS run first so they apply to every response.
 app.use(helmet());
 app.use(

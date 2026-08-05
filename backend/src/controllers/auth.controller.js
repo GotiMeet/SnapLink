@@ -188,3 +188,60 @@ export const googleAuth = asyncHandler(async (req, res) => {
 export const me = asyncHandler(async (req, res) =>
   sendSuccess(res, { data: { user: sanitizeUser(req.user) } })
 );
+
+/**
+ * Updates the authenticated user's profile.
+ * @function updateProfile
+ * @route PATCH /api/v1/auth/me
+ * @access Private
+ */
+export const updateProfile = asyncHandler(async (req, res) => {
+  const user = await authService.updateProfile({
+    userId: req.user._id,
+    fullName: req.body.fullName,
+  });
+
+  return sendSuccess(res, {
+    message: 'Profile updated successfully',
+    data: { user: sanitizeUser(user) },
+  });
+});
+
+/**
+ * Gives an account without a password its first one.
+ * @function setPassword
+ * @route POST /api/v1/auth/set-password
+ * @access Private
+ */
+export const setPassword = asyncHandler(async (req, res) => {
+  const user = await authService.setPassword({
+    userId: req.user._id,
+    password: req.body.password,
+  });
+
+  return sendSuccess(res, {
+    message: 'Password set successfully. You can now also log in with your email and password.',
+    data: { user: sanitizeUser(user) },
+  });
+});
+
+/**
+ * Replaces the authenticated user's password.
+ * @function changePassword
+ * @route POST /api/v1/auth/change-password
+ * @access Private
+ */
+export const changePassword = asyncHandler(async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+
+  const user = await authService.changePassword({
+    userId: req.user._id,
+    oldPassword,
+    newPassword,
+  });
+
+  return sendSuccess(res, {
+    message: 'Password changed successfully',
+    data: { user: sanitizeUser(user) },
+  });
+});

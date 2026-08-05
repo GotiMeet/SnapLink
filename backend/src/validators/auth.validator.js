@@ -73,3 +73,31 @@ export const resetPasswordValidator = [
 export const googleAuthValidator = [
   body('idToken').trim().notEmpty().withMessage('Google ID token is required'),
 ];
+
+/** Validation chain for PATCH /me. */
+export const updateProfileValidator = [
+  body('fullName')
+    .trim()
+    .notEmpty()
+    .withMessage('Full name is required')
+    .isLength({ max: 100 })
+    .withMessage('Full name cannot exceed 100 characters'),
+];
+
+/** Validation chain for POST /set-password. */
+export const setPasswordValidator = [
+  passwordRules(),
+  body('confirmPassword')
+    .custom((value, { req }) => value === req.body.password)
+    .withMessage('Passwords do not match'),
+];
+
+/** Validation chain for POST /change-password. */
+export const changePasswordValidator = [
+  // The stored password only has to be present: it may predate the current rules.
+  body('oldPassword').notEmpty().withMessage('Current password is required'),
+  passwordRules('newPassword'),
+  body('confirmPassword')
+    .custom((value, { req }) => value === req.body.newPassword)
+    .withMessage('Passwords do not match'),
+];
