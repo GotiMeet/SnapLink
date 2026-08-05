@@ -27,6 +27,11 @@ import {
 
 // Shared for login/credential errors so the message never hints which field failed.
 const INVALID_CREDENTIALS_MESSAGE = 'Invalid email or password';
+const USER_NOT_FOUND_MESSAGE = 'User not found';
+const PASSWORD_ALREADY_SET_MESSAGE = 'This account already has a password';
+const PASSWORD_NOT_SET_MESSAGE =
+  'This account has no password yet, set one before changing it';
+const CURRENT_PASSWORD_INCORRECT_MESSAGE = 'Current password is incorrect';
 
 /**
  * Creates a session and issues an access + refresh token pair for a user.
@@ -113,8 +118,10 @@ export const verifyEmail = async (token) => {
 export const login = async ({ email, password, userAgent, ipAddress }) => {
   const user = await User.findOne({ email }).select('+password');
 
-  // Password is select:false by default; a missing password means a non-local account.
-  if (!user || user.authProvider !== AUTH_PROVIDER.LOCAL || !user.password) {
+  // Password is select:false by default. Holding one is what allows local login,
+  // whichever provider created the account, so a Google user who has set a
+  // password can sign in either way.
+  if (!user || !user.password) {
     throw new ApiError(401, INVALID_CREDENTIALS_MESSAGE);
   }
 
@@ -246,8 +253,31 @@ export const resetPassword = async ({ token, newPassword }) => {
 };
 
 /**
- * Authenticates a user from a verified Google ID token, provisioning or linking
- * the account as needed.
+ * Reports whether an account merely claimed this email without ever proving it.
+ * Such an account was created locally and never completed verification, so
+ * nobody has demonstrated they can read mail sent to that address.
+ * @function isUnverifiedLocalAccount
+ */
+const isUnverifiedLocalAccount = (user) =>
+  user.authProvider === AUTH_PROVIDER.LOCAL && !user.isEmailVerified;
+
+/**
+ * Provisions a fresh account from a verified Google identity.
+ * @function createGoogleUser
+ */
+const createGoogleUser = (profile) =>
+  User.create({
+    fullName: profile.fullName || profile.email.split('@')[0],
+    email: profile.email,
+    authProvider: AUTH_PROVIDER.GOOGLE,
+    providerId: profile.googleId,
+    profilePicture: profile.picture || null,
+    isEmailVerified: true,
+  });
+
+/**
+ * Authenticates a user from a verified Google ID token, provisioning, linking,
+ * or replacing the account as the situation requires.
  * @function googleAuth
  */
 export const googleAuth = async ({ idToken, userAgent, ipAddress }) => {
@@ -257,33 +287,35 @@ export const googleAuth = async ({ idToken, userAgent, ipAddress }) => {
     throw new ApiError(401, 'Google account email is not verified');
   }
 
-  let user = await User.findOne({ email: profile.email });
+  // The Google id is matched first because it keeps identifying the account
+  // after the user changes the address on their Google profile, which a lookup
+  // by email would miss and would answer by creating a second account.
+  let user = await User.findOne({ providerId: profile.googleId });
 
   if (!user) {
-    user = await User.create({
-      fullName: profile.fullName || profile.email.split('@')[0],
-      email: profile.email,
-      authProvider: AUTH_PROVIDER.GOOGLE,
-      providerId: profile.googleId,
-      profilePicture: profile.picture || null,
-      isEmailVerified: true,
-    });
-  } else {
-    // Link Google to a pre-existing account and trust Google's verified email.
-    let changed = false;
+    const accountOnEmail = await User.findOne({ email: profile.email });
 
-    if (!user.isEmailVerified) {
-      user.isEmailVerified = true;
-      changed = true;
-    }
+    if (accountOnEmail && isUnverifiedLocalAccount(accountOnEmail)) {
+      // The address was claimed here but never proven, while Google has just
+      // proven it belongs to whoever is signing in. Handing them that account
+      // would leave whoever registered it holding a working password, so the
+      // unproven claim is removed and the address starts clean.
+      // Such an account can never have signed in, so it owns no data to lose.
+      await User.deleteOne({
+        _id: accountOnEmail._id,
+        authProvider: AUTH_PROVIDER.LOCAL,
+        isEmailVerified: false,
+      });
 
-    if (!user.providerId) {
-      user.providerId = profile.googleId;
-      changed = true;
-    }
+      user = await createGoogleUser(profile);
+    } else if (accountOnEmail) {
+      // A verified account already owns this address, so Google joins it.
+      accountOnEmail.providerId = profile.googleId;
+      await accountOnEmail.save();
 
-    if (changed) {
-      await user.save();
+      user = accountOnEmail;
+    } else {
+      user = await createGoogleUser(profile);
     }
   }
 
@@ -292,4 +324,78 @@ export const googleAuth = async ({ idToken, userAgent, ipAddress }) => {
   const tokens = await issueAuthTokens(user, { userAgent, ipAddress });
 
   return { user, ...tokens };
+};
+
+/**
+ * Updates the profile fields a user is allowed to change.
+ * @function updateProfile
+ */
+export const updateProfile = async ({ userId, fullName }) => {
+  const user = await User.findById(userId);
+
+  if (!user) {
+    throw new ApiError(404, USER_NOT_FOUND_MESSAGE);
+  }
+
+  if (fullName !== undefined) {
+    user.fullName = fullName;
+  }
+
+  await user.save();
+
+  return user;
+};
+
+/**
+ * Gives an account its first password, so a user created through Google can also
+ * sign in with their email. No current password is asked for because there is
+ * none, and an existing one is never overwritten here.
+ * @function setPassword
+ */
+export const setPassword = async ({ userId, password }) => {
+  const user = await User.findById(userId).select('+password');
+
+  if (!user) {
+    throw new ApiError(404, USER_NOT_FOUND_MESSAGE);
+  }
+
+  if (user.password) {
+    throw new ApiError(409, PASSWORD_ALREADY_SET_MESSAGE);
+  }
+
+  user.password = await hashPassword(password);
+  await user.save();
+
+  return user;
+};
+
+/**
+ * Replaces the password of an account that already has one, after proving the
+ * caller knows the current one.
+ * Only the password changes: the provider fields are left alone, so an account
+ * linked to Google keeps signing in that way as well.
+ * @function changePassword
+ */
+export const changePassword = async ({ userId, oldPassword, newPassword }) => {
+  const user = await User.findById(userId).select('+password');
+
+  if (!user) {
+    throw new ApiError(404, USER_NOT_FOUND_MESSAGE);
+  }
+
+  // Nothing to replace yet; that is what the set-password flow is for.
+  if (!user.password) {
+    throw new ApiError(409, PASSWORD_NOT_SET_MESSAGE);
+  }
+
+  const currentPasswordMatches = await comparePassword(oldPassword, user.password);
+
+  if (!currentPasswordMatches) {
+    throw new ApiError(401, CURRENT_PASSWORD_INCORRECT_MESSAGE);
+  }
+
+  user.password = await hashPassword(newPassword);
+  await user.save();
+
+  return user;
 };
