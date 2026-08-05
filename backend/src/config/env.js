@@ -3,6 +3,7 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const nodeEnv = process.env.NODE_ENV || 'development';
+const port = Number(process.env.PORT) || 5000;
 
 const requiredEnvVars = [
   'MONGO_URI',
@@ -21,10 +22,13 @@ if (missingEnvVars.length > 0) {
 }
 
 const config = {
-  port: Number(process.env.PORT) || 5000,
+  port,
   nodeEnv,
   apiPrefix: '/api/v1',
   clientUrl: process.env.CLIENT_URL || 'http://localhost:3000',
+  // Public origin short links resolve from, and therefore what a QR code encodes.
+  // A trailing slash is trimmed so the code is always built the same way.
+  appUrl: (process.env.APP_URL || `http://localhost:${port}`).replace(/\/+$/, ''),
   mongoUri: process.env.MONGO_URI,
   corsOrigin: process.env.CORS_ORIGIN || '*',
   bcryptSaltRounds: Number(process.env.BCRYPT_SALT_ROUNDS) || 12,

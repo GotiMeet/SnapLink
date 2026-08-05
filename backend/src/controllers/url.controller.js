@@ -12,6 +12,7 @@ import asyncHandler from '../utils/asyncHandler.js';
 import { sendSuccess } from '../utils/ApiResponse.js';
 import { sanitizeShortUrl } from '../utils/sanitizeShortUrl.js';
 import * as urlService from '../services/url.service.js';
+import * as qrService from '../services/qr.service.js';
 
 /**
  * Creates a short URL inside one of the user's projects.
@@ -97,6 +98,27 @@ export const getUrlById = asyncHandler(async (req, res) => {
   });
 
   return sendSuccess(res, { data: { shortUrl: sanitizeShortUrl(shortUrl) } });
+});
+
+/**
+ * Returns the QR code image for one of the user's links.
+ * @function getUrlQrCode
+ * @route GET /api/v1/urls/:urlId/qr
+ * @access Private
+ */
+export const getUrlQrCode = asyncHandler(async (req, res) => {
+  const shortCode = await urlService.getOwnedShortCode({
+    urlId: req.params.urlId,
+    ownerId: req.user._id,
+  });
+
+  const image = await qrService.generateQrPng(shortCode);
+
+  // The one endpoint that answers with binary instead of the JSON envelope.
+  // Failures still travel through the global error handler and stay JSON.
+  res.type('png');
+
+  return res.send(image);
 });
 
 /**
