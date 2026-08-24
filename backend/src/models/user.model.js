@@ -56,6 +56,26 @@ const userSchema = new mongoose.Schema(
       default: ROLE.USER,
       required: true,
     },
+    // Set to now+1h on local registration; unset on verification.
+    // The TTL index below deletes the document once this date passes.
+    // Verified users always have this field unset and are never affected.
+    unverifiedExpiresAt: {
+      type: Date,
+      default: null,
+    },
+    // Monotonically incrementing counter embedded as a `ver` claim in every
+    // verification JWT. Incrementing it (on resend) makes all older tokens
+    // invalid without needing a blacklist.
+    emailVerificationVersion: {
+      type: Number,
+      default: 0,
+    },
+    // Timestamp of the last verification email dispatch; used to enforce the
+    // 1-minute resend cooldown. Cleared after successful verification.
+    verificationEmailLastSentAt: {
+      type: Date,
+      default: null,
+    },
   },
   {
     timestamps: true,
@@ -68,6 +88,20 @@ const userSchema = new mongoose.Schema(
 userSchema.index(
   { providerId: 1 },
   { unique: true, partialFilterExpression: { providerId: { $type: 'string' } } }
+);
+
+// TTL index for automatic unverified-account cleanup.
+// MongoDB deletes documents once `unverifiedExpiresAt` is in the past.
+// `expireAfterSeconds: 0` means the TTL daemon fires at the exact expiry time
+// (within its ~60-second polling interval).
+// The partial filter restricts the index to documents that actually have the
+// field set, so verified users (where the field is null/unset) are never scanned.
+userSchema.index(
+  { unverifiedExpiresAt: 1 },
+  {
+    expireAfterSeconds: 0,
+    partialFilterExpression: { unverifiedExpiresAt: { $type: 'date' } },
+  }
 );
 
 const User = mongoose.model('User', userSchema);

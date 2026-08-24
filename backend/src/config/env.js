@@ -44,7 +44,7 @@ const config = {
     // Time-to-live values are expressed in seconds and shared with cookie maxAge.
     accessTtl: Number(process.env.JWT_ACCESS_TTL) || 15 * 60,
     refreshTtl: Number(process.env.JWT_REFRESH_TTL) || 7 * 24 * 60 * 60,
-    emailVerificationTtl: Number(process.env.JWT_EMAIL_VERIFICATION_TTL) || 24 * 60 * 60,
+    emailVerificationTtl: Number(process.env.JWT_EMAIL_VERIFICATION_TTL) || 15 * 60,
     passwordResetTtl: Number(process.env.JWT_PASSWORD_RESET_TTL) || 15 * 60,
   },
   cookie: {
