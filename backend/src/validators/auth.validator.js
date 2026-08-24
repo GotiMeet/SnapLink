@@ -53,6 +53,16 @@ export const verifyEmailValidator = [
   body('token').trim().notEmpty().withMessage('Verification token is required'),
 ];
 
+/** Validation chain for POST /resend-verification-email. */
+export const resendVerificationEmailValidator = [
+  body('email')
+    .trim()
+    .notEmpty()
+    .withMessage('Email is required')
+    .isEmail()
+    .withMessage('A valid email is required'),
+];
+
 /** Validation chain for POST /forgot-password. */
 export const forgotPasswordValidator = [
   body('email')

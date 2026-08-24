@@ -66,6 +66,8 @@ const assertAccountActive = (user) => {
 
 /**
  * Registers a new local user and sends an email-verification link.
+ * Sets `unverifiedExpiresAt` so the TTL index can remove the account
+ * automatically if the user never completes verification.
  * @function register
  */
 export const register = async ({ fullName, email, password }) => {
@@ -75,12 +77,18 @@ export const register = async ({ fullName, email, password }) => {
     throw new ApiError(409, 'Email is already registered');
   }
 
+  const now = new Date();
+
   const user = await User.create({
     fullName,
     email,
     password: await hashPassword(password),
     authProvider: AUTH_PROVIDER.LOCAL,
     isEmailVerified: false,
+    // TTL: MongoDB will delete this document 1 hour after registration
+    // if the user has not verified their email by then.
+    unverifiedExpiresAt: new Date(now.getTime() + 60 * 60 * 1000),
+    verificationEmailLastSentAt: now,
   });
 
   const verificationToken = tokenService.generateEmailVerificationToken(user);
@@ -91,24 +99,97 @@ export const register = async ({ fullName, email, password }) => {
 
 /**
  * Marks a user's email as verified from a valid verification token.
+ * Validates the JWT expiry and the embedded version number before accepting.
+ * On success, clears all temporary verification state and prevents the TTL
+ * index from ever deleting the now-verified account.
  * @function verifyEmail
  */
 export const verifyEmail = async (token) => {
-  const payload = tokenService.verifyEmailVerificationToken(token);
+  let payload;
+
+  try {
+    payload = tokenService.verifyEmailVerificationToken(token);
+  } catch {
+    // JWT verification failed: token is malformed or past its `exp` timestamp.
+    throw new ApiError(
+      400,
+      'This verification link has expired. Please request a new one.'
+    );
+  }
 
   const user = await User.findById(payload.sub);
 
   if (!user) {
-    throw new ApiError(400, 'Invalid verification link');
+    // The account was deleted — most likely by the TTL daemon after the
+    // 1-hour unverified-account lifetime elapsed.
+    throw new ApiError(
+      400,
+      'This account no longer exists. It may have expired before verification was completed. Please register again.'
+    );
+  }
+
+  // The version in the token must match the current version stored on the user.
+  // A mismatch means a newer verification email was issued, superseding this link.
+  if (payload.ver !== user.emailVerificationVersion) {
+    throw new ApiError(
+      400,
+      'This verification link is no longer valid. Please use the most recent verification email sent to you.'
+    );
   }
 
   // Idempotent: re-verifying an already-verified account is a no-op success.
   if (!user.isEmailVerified) {
     user.isEmailVerified = true;
+    // Clear all temporary verification state. Setting these to undefined
+    // removes the fields from the document, ensuring the TTL index never
+    // triggers on this verified account.
+    user.unverifiedExpiresAt = undefined;
+    user.verificationEmailLastSentAt = undefined;
     await user.save();
   }
 
   return user;
+};
+
+/**
+ * Issues a fresh verification email for an unverified local account.
+ * Enforces a 1-minute cooldown between requests and increments the
+ * version counter to invalidate all previously issued verification links.
+ * Always returns without error when the account is not found or is already
+ * verified, so the response cannot be used to enumerate registered emails.
+ * @function resendVerificationEmail
+ */
+export const resendVerificationEmail = async ({ email }) => {
+  const user = await User.findOne({ email });
+
+  // Silently succeed if the account does not exist or is already verified
+  // to avoid leaking information about which addresses are registered.
+  if (!user || user.isEmailVerified) {
+    return;
+  }
+
+  const COOLDOWN_MS = 60 * 1000; // 1 minute
+
+  if (
+    user.verificationEmailLastSentAt &&
+    Date.now() - user.verificationEmailLastSentAt.getTime() < COOLDOWN_MS
+  ) {
+    const secondsRemaining = Math.ceil(
+      (COOLDOWN_MS - (Date.now() - user.verificationEmailLastSentAt.getTime())) / 1000
+    );
+    throw new ApiError(
+      429,
+      `Please wait ${secondsRemaining} second${secondsRemaining !== 1 ? 's' : ''} before requesting another verification email.`
+    );
+  }
+
+  // Incrementing the version invalidates all previously issued tokens.
+  user.emailVerificationVersion += 1;
+  user.verificationEmailLastSentAt = new Date();
+  await user.save();
+
+  const verificationToken = tokenService.generateEmailVerificationToken(user);
+  await sendVerificationEmail(user, verificationToken);
 };
 
 /**

@@ -12,6 +12,7 @@ import {
   registerValidator,
   loginValidator,
   verifyEmailValidator,
+  resendVerificationEmailValidator,
   forgotPasswordValidator,
   resetPasswordValidator,
   googleAuthValidator,
@@ -37,6 +38,19 @@ router.post('/register', registerValidator, validateMiddleware, authController.r
  * @memberof module:routes/auth.routes
  */
 router.post('/verify-email', verifyEmailValidator, validateMiddleware, authController.verifyEmail);
+
+/**
+ * Resends the verification email to an unverified account.
+ * @name POST /api/v1/auth/resend-verification-email
+ * @function
+ * @memberof module:routes/auth.routes
+ */
+router.post(
+  '/resend-verification-email',
+  resendVerificationEmailValidator,
+  validateMiddleware,
+  authController.resendVerificationEmail
+);
 
 /**
  * Authenticates a user and starts a session.

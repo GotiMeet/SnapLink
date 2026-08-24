@@ -61,6 +61,23 @@ export const verifyEmail = asyncHandler(async (req, res) => {
 });
 
 /**
+ * Sends a new verification email for an unverified account.
+ * Returns a generic message regardless of whether the email is registered
+ * so the endpoint cannot be used to enumerate valid addresses.
+ * @function resendVerificationEmail
+ * @route POST /api/v1/auth/resend-verification-email
+ * @access Public
+ */
+export const resendVerificationEmail = asyncHandler(async (req, res) => {
+  await authService.resendVerificationEmail({ email: req.body.email });
+
+  return sendSuccess(res, {
+    message:
+      'If your account is pending verification, a new email has been sent.',
+  });
+});
+
+/**
  * Authenticates a local user and starts a session.
  * @function login
  * @route POST /api/v1/auth/login

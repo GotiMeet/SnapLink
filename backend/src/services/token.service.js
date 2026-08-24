@@ -73,11 +73,18 @@ export const generateRefreshToken = (user, sessionId) =>
 
 /**
  * Generates an email-verification token.
+ * Includes a `ver` claim matching the user's current `emailVerificationVersion`
+ * so that issuing a new email (and incrementing the version) immediately
+ * invalidates all older tokens without needing a blacklist.
  * @function generateEmailVerificationToken
  */
 export const generateEmailVerificationToken = (user) =>
   signToken(
-    { sub: user._id.toString(), type: TOKEN_TYPE.EMAIL_VERIFICATION },
+    {
+      sub: user._id.toString(),
+      ver: user.emailVerificationVersion,
+      type: TOKEN_TYPE.EMAIL_VERIFICATION,
+    },
     config.jwt.emailVerificationSecret,
     config.jwt.emailVerificationTtl
   );
