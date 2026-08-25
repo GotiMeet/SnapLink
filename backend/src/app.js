@@ -21,6 +21,7 @@ import morgan from 'morgan';
 import config from './config/env.js';
 import apiRoutes from './routes/index.js';
 import redirectRoutes from './routes/redirect.routes.js';
+import originValidationMiddleware from './middleware/originValidation.middleware.js';
 import notFoundMiddleware from './middleware/notFound.middleware.js';
 import errorMiddleware from './middleware/error.middleware.js';
 
@@ -50,6 +51,9 @@ if (config.nodeEnv === 'development') {
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
+
+// Enforce strict origin validation on state-changing requests to block CSRF.
+app.use(originValidationMiddleware);
 
 app.use(config.apiPrefix, apiRoutes);
 

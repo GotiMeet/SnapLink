@@ -5,9 +5,9 @@ dotenv.config();
 const nodeEnv = process.env.NODE_ENV || 'development';
 const port = Number(process.env.PORT) || 5000;
 const isProduction = nodeEnv === 'production';
-const clientUrl = process.env.CLIENT_URL || 'http://localhost:3000';
 
-const requiredEnvVars = [
+// Core environment variables required in all environments.
+const baseRequiredEnvVars = [
   'MONGO_URI',
   'JWT_ACCESS_SECRET',
   'JWT_REFRESH_SECRET',
@@ -15,13 +15,40 @@ const requiredEnvVars = [
   'JWT_PASSWORD_RESET_SECRET',
 ];
 
-const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]);
+// In production, explicit public origins and SMTP credentials are required so that
+// short links, CORS, and transactional emails do not fail or fall back to localhost.
+const productionRequiredEnvVars = [
+  'APP_URL',
+  'CLIENT_URL',
+  'SMTP_HOST',
+  'SMTP_USER',
+  'SMTP_PASS',
+];
+
+const requiredEnvVars = isProduction
+  ? [...baseRequiredEnvVars, ...productionRequiredEnvVars]
+  : baseRequiredEnvVars;
+
+const missingEnvVars = requiredEnvVars.filter((key) => !process.env[key]?.trim());
 
 if (missingEnvVars.length > 0) {
   throw new Error(
-    `Missing required environment variables: ${missingEnvVars.join(', ')}`
+    `Missing required environment variables for ${nodeEnv} environment: ${missingEnvVars.join(', ')}`
   );
 }
+
+// In production, URLs must come strictly from environment variables without localhost fallbacks.
+const clientUrl = (
+  isProduction
+    ? process.env.CLIENT_URL
+    : process.env.CLIENT_URL || 'http://localhost:3000'
+).replace(/\/+$/, '');
+
+const appUrl = (
+  isProduction
+    ? process.env.APP_URL
+    : process.env.APP_URL || `http://localhost:${port}`
+).replace(/\/+$/, '');
 
 const config = {
   port,
@@ -30,7 +57,7 @@ const config = {
   clientUrl,
   // Public origin short links resolve from, and therefore what a QR code encodes.
   // A trailing slash is trimmed so the code is always built the same way.
-  appUrl: (process.env.APP_URL || `http://localhost:${port}`).replace(/\/+$/, ''),
+  appUrl,
   mongoUri: process.env.MONGO_URI,
   // Never a wildcard: the API answers credentialed requests, and browsers reject
   // "*" on those. Falling back to the client URL keeps the allowed origin exact.

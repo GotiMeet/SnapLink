@@ -36,6 +36,11 @@ export const redirectToOriginalUrl = asyncHandler(async (req, res) => {
     visit: getVisitContext(req),
   });
 
+  // Prevent browser/proxy caching of redirects so every visit hits the backend and is counted in analytics.
+  res.set('Cache-Control', 'no-cache, no-store, must-revalidate, private');
+  res.set('Pragma', 'no-cache');
+  res.set('Expires', '0');
+
   // A temporary redirect keeps clients coming back so visits stay countable.
   return res.redirect(302, originalUrl);
 });
