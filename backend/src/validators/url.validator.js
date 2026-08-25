@@ -134,6 +134,8 @@ export const updateUrlValidator = [
     .withMessage('A valid http or https URL is required')
     .isLength({ max: 2048 })
     .withMessage('Original URL cannot exceed 2048 characters'),
+  // An empty alias is treated as absent so a caller can omit it entirely.
+  aliasRules(body('customAlias').optional({ values: 'falsy' }).trim()),
   body('visibility')
     .optional()
     .isIn(Object.values(VISIBILITY))
@@ -152,6 +154,32 @@ export const updateUrlValidator = [
     body('scheduledDeleteAt').optional({ values: 'null' }),
     'Scheduled delete date'
   ),
+  body('resetAnalytics')
+    .optional()
+    .isBoolean()
+    .withMessage('resetAnalytics must be a boolean'),
+  // confirmationText is only evaluated when resetAnalytics is explicitly true.
+  // The custom validator runs after isBoolean has already coerced the value, so
+  // req.body.resetAnalytics is the native boolean true when the check fires.
+  body('confirmationText').custom((value, { req }) => {
+    if (req.body.resetAnalytics !== true) {
+      return true;
+    }
+
+    if (!value) {
+      throw new Error(
+        'confirmationText is required when resetting analytics'
+      );
+    }
+
+    if (value !== 'RESET_ANALYTICS') {
+      throw new Error(
+        'confirmationText must be exactly "RESET_ANALYTICS"'
+      );
+    }
+
+    return true;
+  }),
 ];
 
 /** Validation chain for GET /urls. */
