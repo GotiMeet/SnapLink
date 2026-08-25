@@ -128,18 +128,28 @@ export const getUrlQrCode = asyncHandler(async (req, res) => {
  * @access Private
  */
 export const updateUrl = asyncHandler(async (req, res) => {
-  const { title, originalUrl, visibility, password, scheduledLiveAt, scheduledDeleteAt } =
-    req.body;
+  const {
+    title,
+    originalUrl,
+    customAlias,
+    visibility,
+    password,
+    scheduledLiveAt,
+    scheduledDeleteAt,
+    resetAnalytics,
+  } = req.body;
 
   const shortUrl = await urlService.updateUrl({
     urlId: req.params.urlId,
     ownerId: req.user._id,
     title,
     originalUrl,
+    customAlias,
     visibility,
     password,
     scheduledLiveAt,
     scheduledDeleteAt,
+    resetAnalytics,
   });
 
   return sendSuccess(res, {

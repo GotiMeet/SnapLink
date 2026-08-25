@@ -25,7 +25,7 @@ import {
   claimActiveProject,
   getProjectSummary,
 } from './project.service.js';
-import { getLifetimeTotals } from './analytics.service.js';
+import { getLifetimeTotals, deleteAnalyticsByUrl } from './analytics.service.js';
 
 const URL_NOT_FOUND_MESSAGE = 'Short URL not found';
 const ALIAS_TAKEN_MESSAGE = 'This alias is already taken';
@@ -312,6 +312,9 @@ export const getOwnedShortCode = async ({ urlId, ownerId }) => {
 
 /**
  * Updates an active short URL's editable fields.
+ * Supports changing the alias (shortCode), original URL, title, visibility,
+ * password, and scheduling dates. Optionally resets all analytics after the
+ * update when the caller supplies `resetAnalytics: true`.
  * @function updateUrl
  */
 export const updateUrl = async ({
@@ -319,10 +322,12 @@ export const updateUrl = async ({
   ownerId,
   title,
   originalUrl,
+  customAlias,
   visibility,
   password,
   scheduledLiveAt,
   scheduledDeleteAt,
+  resetAnalytics = false,
 }) => {
   const shortUrl = await findOwnedUrl({ urlId, ownerId, withPassword: true });
 
@@ -332,6 +337,21 @@ export const updateUrl = async ({
 
   if (originalUrl !== undefined) {
     shortUrl.originalUrl = originalUrl;
+  }
+
+  if (customAlias !== undefined) {
+    // An alias equal to the current one is a no-op; skip the availability check
+    // so the owner does not receive a spurious "already taken" error.
+    if (customAlias !== shortUrl.shortCode) {
+      const available = await isShortCodeAvailable(customAlias);
+
+      if (!available) {
+        throw new ApiError(409, ALIAS_TAKEN_MESSAGE);
+      }
+
+      shortUrl.shortCode = customAlias;
+      shortUrl.isCustomAlias = true;
+    }
   }
 
   if (scheduledLiveAt !== undefined) {
@@ -372,6 +392,13 @@ export const updateUrl = async ({
     await shortUrl.save();
   } catch (error) {
     throw toWriteConflict(error);
+  }
+
+  // Analytics reset runs after a successful save so the link is always updated
+  // before any history is removed. A deletion failure here does not roll back
+  // the link change; the new alias is live regardless.
+  if (resetAnalytics) {
+    await deleteAnalyticsByUrl(shortUrl._id);
   }
 
   return withLifetimeTotal(shortUrl);

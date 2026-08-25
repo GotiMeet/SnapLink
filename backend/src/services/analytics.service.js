@@ -266,6 +266,19 @@ export const getLifetimeTotals = async (urlIds) => {
 };
 
 /**
+ * Deletes all analytics documents for a single link.
+ * Called when a client explicitly resets analytics during a link update.
+ * Future visits to the link will create new daily documents as normal because
+ * the analytics collection is append-only for new data; deletion only removes
+ * historical records.
+ * @function deleteAnalyticsByUrl
+ * @param {string|ObjectId} urlId - The short URL's database id.
+ */
+export const deleteAnalyticsByUrl = async (urlId) => {
+  await Analytics.deleteMany({ url: urlId });
+};
+
+/**
  * Returns every report for a link in one payload.
  * @function getAnalytics
  */
