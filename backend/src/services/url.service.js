@@ -115,7 +115,7 @@ const withLifetimeTotal = async (shortUrl) => {
 const findOwnedUrl = async ({
   urlId,
   ownerId,
-  status = URL_STATUS.ACTIVE,
+  status = { $in: [URL_STATUS.ACTIVE, URL_STATUS.INACTIVE] },
   withPassword = false,
 }) => {
   const query = ShortUrl.findOne({
@@ -223,6 +223,12 @@ export const createUrl = async ({
   try {
     let createdUrl;
 
+    const isFutureScheduled =
+      scheduledLiveAt && new Date(scheduledLiveAt).getTime() > Date.now();
+    const initialStatus = isFutureScheduled
+      ? URL_STATUS.INACTIVE
+      : URL_STATUS.ACTIVE;
+
     await session.withTransaction(async () => {
       // Re-checked here because the project may have been deleted since the
       // first check; claiming it makes a concurrent delete conflict rather than
@@ -247,6 +253,7 @@ export const createUrl = async ({
             isCustomAlias: Boolean(customAlias),
             visibility,
             password: hashedPassword,
+            status: initialStatus,
             scheduledLiveAt: scheduledLiveAt || null,
             scheduledDeleteAt: scheduledDeleteAt || null,
           },
@@ -278,7 +285,9 @@ export const createUrl = async ({
 export const getUrls = async ({ ownerId, projectId, deleted = false }) => {
   const filter = {
     owner: ownerId,
-    status: deleted ? URL_STATUS.DELETED_LINK : URL_STATUS.ACTIVE,
+    status: deleted
+      ? URL_STATUS.DELETED_LINK
+      : { $in: [URL_STATUS.ACTIVE, URL_STATUS.INACTIVE] },
   };
 
   if (projectId) {
@@ -356,6 +365,16 @@ export const updateUrl = async ({
 
   if (scheduledLiveAt !== undefined) {
     shortUrl.scheduledLiveAt = scheduledLiveAt || null;
+    if (
+      shortUrl.status !== URL_STATUS.DELETED_LINK &&
+      shortUrl.status !== URL_STATUS.DELETED_PROJECT
+    ) {
+      if (scheduledLiveAt && new Date(scheduledLiveAt).getTime() > Date.now()) {
+        shortUrl.status = URL_STATUS.INACTIVE;
+      } else {
+        shortUrl.status = URL_STATUS.ACTIVE;
+      }
+    }
   }
 
   if (scheduledDeleteAt !== undefined) {
@@ -433,6 +452,13 @@ export const restoreUrl = async ({ urlId, ownerId }) => {
     status: URL_STATUS.DELETED_LINK,
   });
 
+  const isFutureScheduled =
+    shortUrl.scheduledLiveAt &&
+    new Date(shortUrl.scheduledLiveAt).getTime() > Date.now();
+  const targetStatus = isFutureScheduled
+    ? URL_STATUS.INACTIVE
+    : URL_STATUS.ACTIVE;
+
   const session = await mongoose.startSession();
 
   try {
@@ -460,7 +486,7 @@ export const restoreUrl = async ({ urlId, ownerId }) => {
       try {
         await ShortUrl.updateOne(
           { _id: shortUrl._id, owner: ownerId, status: URL_STATUS.DELETED_LINK },
-          { $set: { status: URL_STATUS.ACTIVE, deletedAt: null } },
+          { $set: { status: targetStatus, deletedAt: null } },
           { session }
         );
       } catch (error) {
@@ -468,7 +494,7 @@ export const restoreUrl = async ({ urlId, ownerId }) => {
       }
     });
 
-    shortUrl.status = URL_STATUS.ACTIVE;
+    shortUrl.status = targetStatus;
     shortUrl.deletedAt = null;
 
     return { shortUrl: await withLifetimeTotal(shortUrl), project };
