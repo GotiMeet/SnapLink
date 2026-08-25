@@ -178,7 +178,10 @@ export const softDeleteProject = ({ projectId, ownerId }) =>
       await project.save({ session });
 
       await ShortUrl.updateMany(
-        { project: project._id, status: URL_STATUS.ACTIVE },
+        {
+          project: project._id,
+          status: { $in: [URL_STATUS.ACTIVE, URL_STATUS.INACTIVE] },
+        },
         { $set: { status: URL_STATUS.DELETED_PROJECT } },
         { session }
       );
@@ -204,9 +207,24 @@ export const restoreProject = ({ projectId, ownerId }) =>
         throw toTitleConflict(error, RESTORE_TITLE_TAKEN_MESSAGE);
       }
 
+      const now = new Date();
       await ShortUrl.updateMany(
-        { project: project._id, status: URL_STATUS.DELETED_PROJECT },
+        {
+          project: project._id,
+          status: URL_STATUS.DELETED_PROJECT,
+          $or: [{ scheduledLiveAt: null }, { scheduledLiveAt: { $lte: now } }],
+        },
         { $set: { status: URL_STATUS.ACTIVE } },
+        { session }
+      );
+
+      await ShortUrl.updateMany(
+        {
+          project: project._id,
+          status: URL_STATUS.DELETED_PROJECT,
+          scheduledLiveAt: { $gt: now },
+        },
+        { $set: { status: URL_STATUS.INACTIVE } },
         { session }
       );
     },

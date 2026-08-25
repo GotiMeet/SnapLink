@@ -14,6 +14,10 @@
 import app from './app.js';
 import config from './config/env.js';
 import connectDB from './config/db.js';
+import {
+  startScheduler,
+  stopScheduler,
+} from './services/urlScheduler.service.js';
 
 /**
  * Connects the database, then starts the HTTP server and wires shutdown handlers.
@@ -22,6 +26,9 @@ import connectDB from './config/db.js';
 const startServer = async () => {
   // Establish persistence before accepting traffic so no request runs without a DB.
   await connectDB();
+
+  // Start background URL scheduling worker for automated activation and soft deletion.
+  startScheduler();
 
   const server = app.listen(config.port, () => {
     console.log(
@@ -32,6 +39,7 @@ const startServer = async () => {
   // Close the server on termination signals so in-flight requests can drain.
   const shutdown = (signal) => {
     console.log(`${signal} received. Shutting down gracefully...`);
+    stopScheduler();
     server.close(() => {
       console.log('Server closed.');
       process.exit(0);
