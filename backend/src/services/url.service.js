@@ -197,8 +197,23 @@ export const createUrl = async ({
     );
   }
 
-  if (!isPrivate && password !== undefined) {
-    throw new ApiError(400, PASSWORD_NOT_ALLOWED_MESSAGE);
+  if (scheduledLiveAt && new Date(scheduledLiveAt).getTime() <= Date.now()) {
+    throw new ApiError(400, 'Scheduled live date must be in the future');
+  }
+
+  if (scheduledDeleteAt && new Date(scheduledDeleteAt).getTime() <= Date.now()) {
+    throw new ApiError(400, 'Scheduled delete date must be in the future');
+  }
+
+  if (
+    scheduledLiveAt &&
+    scheduledDeleteAt &&
+    new Date(scheduledDeleteAt).getTime() <= new Date(scheduledLiveAt).getTime()
+  ) {
+    throw new ApiError(
+      400,
+      'Scheduled delete date must be later than scheduled live date'
+    );
   }
 
   let shortCode;
@@ -363,6 +378,30 @@ export const updateUrl = async ({
     }
   }
 
+  const effectiveLiveAt =
+    scheduledLiveAt !== undefined ? scheduledLiveAt : shortUrl.scheduledLiveAt;
+  const effectiveDeleteAt =
+    scheduledDeleteAt !== undefined ? scheduledDeleteAt : shortUrl.scheduledDeleteAt;
+
+  if (scheduledLiveAt && new Date(scheduledLiveAt).getTime() <= Date.now()) {
+    throw new ApiError(400, 'Scheduled live date must be in the future');
+  }
+
+  if (scheduledDeleteAt && new Date(scheduledDeleteAt).getTime() <= Date.now()) {
+    throw new ApiError(400, 'Scheduled delete date must be in the future');
+  }
+
+  if (
+    effectiveLiveAt &&
+    effectiveDeleteAt &&
+    new Date(effectiveDeleteAt).getTime() <= new Date(effectiveLiveAt).getTime()
+  ) {
+    throw new ApiError(
+      400,
+      'Scheduled delete date must be later than scheduled live date'
+    );
+  }
+
   if (scheduledLiveAt !== undefined) {
     shortUrl.scheduledLiveAt = scheduledLiveAt || null;
     if (
@@ -416,7 +455,7 @@ export const updateUrl = async ({
   // Analytics reset runs after a successful save so the link is always updated
   // before any history is removed. A deletion failure here does not roll back
   // the link change; the new alias is live regardless.
-  if (resetAnalytics) {
+  if (resetAnalytics === true) {
     await deleteAnalyticsByUrl(shortUrl._id);
   }
 

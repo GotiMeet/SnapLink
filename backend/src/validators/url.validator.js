@@ -56,12 +56,50 @@ const linkPasswordRules = (chain) =>
     .withMessage('Password must be between 6 and 72 characters');
 
 /**
- * Applies the shared scheduling-date rules to an existing chain.
- * The dates are only stored for now, so they are checked for format alone.
- * @function scheduleRules
+ * Validates that scheduledLiveAt is a valid ISO 8601 string and is in the future.
+ * @function scheduledLiveAtRules
  */
-const scheduleRules = (chain, label) =>
-  chain.isISO8601().withMessage(`${label} must be a valid ISO 8601 date`);
+const scheduledLiveAtRules = (chain) =>
+  chain
+    .isISO8601()
+    .withMessage('Scheduled live date must be a valid ISO 8601 date')
+    .bail()
+    .custom((value) => {
+      const liveDate = new Date(value);
+      if (liveDate.getTime() <= Date.now()) {
+        throw new Error('Scheduled live date must be in the future');
+      }
+      return true;
+    });
+
+/**
+ * Validates that scheduledDeleteAt is a valid ISO 8601 string, is in the future,
+ * and is later than scheduledLiveAt when both dates are present.
+ * @function scheduledDeleteAtRules
+ */
+const scheduledDeleteAtRules = (chain) =>
+  chain
+    .isISO8601()
+    .withMessage('Scheduled delete date must be a valid ISO 8601 date')
+    .bail()
+    .custom((value, { req }) => {
+      const deleteDate = new Date(value);
+      if (deleteDate.getTime() <= Date.now()) {
+        throw new Error('Scheduled delete date must be in the future');
+      }
+      if (req.body.scheduledLiveAt) {
+        const liveDate = new Date(req.body.scheduledLiveAt);
+        if (
+          !Number.isNaN(liveDate.getTime()) &&
+          deleteDate.getTime() <= liveDate.getTime()
+        ) {
+          throw new Error(
+            'Scheduled delete date must be later than scheduled live date'
+          );
+        }
+      }
+      return true;
+    });
 
 /** Validation chain for the :urlId route parameter. */
 export const urlIdParamValidator = [
@@ -106,14 +144,8 @@ export const createUrlValidator = [
     .if(body('password').exists())
     .custom((value, { req }) => value === req.body.password)
     .withMessage('Passwords do not match'),
-  scheduleRules(
-    body('scheduledLiveAt').optional({ values: 'falsy' }),
-    'Scheduled live date'
-  ),
-  scheduleRules(
-    body('scheduledDeleteAt').optional({ values: 'falsy' }),
-    'Scheduled delete date'
-  ),
+  scheduledLiveAtRules(body('scheduledLiveAt').optional({ values: 'falsy' })),
+  scheduledDeleteAtRules(body('scheduledDeleteAt').optional({ values: 'falsy' })),
 ];
 
 /** Validation chain for PATCH /urls/:urlId. */
@@ -146,36 +178,27 @@ export const updateUrlValidator = [
     .if(body('password').exists({ values: 'falsy' }))
     .custom((value, { req }) => value === req.body.password)
     .withMessage('Passwords do not match'),
-  scheduleRules(
-    body('scheduledLiveAt').optional({ values: 'null' }),
-    'Scheduled live date'
-  ),
-  scheduleRules(
-    body('scheduledDeleteAt').optional({ values: 'null' }),
-    'Scheduled delete date'
-  ),
+  scheduledLiveAtRules(body('scheduledLiveAt').optional({ values: 'null' })),
+  scheduledDeleteAtRules(body('scheduledDeleteAt').optional({ values: 'null' })),
   body('resetAnalytics')
     .optional()
     .isBoolean()
-    .withMessage('resetAnalytics must be a boolean'),
+    .withMessage('resetAnalytics must be a boolean')
+    .toBoolean(),
   // confirmationText is only evaluated when resetAnalytics is explicitly true.
-  // The custom validator runs after isBoolean has already coerced the value, so
-  // req.body.resetAnalytics is the native boolean true when the check fires.
   body('confirmationText').custom((value, { req }) => {
-    if (req.body.resetAnalytics !== true) {
-      return true;
-    }
+    if (req.body.resetAnalytics === true) {
+      if (!value) {
+        throw new Error(
+          'confirmationText is required when resetting analytics'
+        );
+      }
 
-    if (!value) {
-      throw new Error(
-        'confirmationText is required when resetting analytics'
-      );
-    }
-
-    if (value !== 'RESET_ANALYTICS') {
-      throw new Error(
-        'confirmationText must be exactly "RESET_ANALYTICS"'
-      );
+      if (value !== 'RESET_ANALYTICS') {
+        throw new Error(
+          'confirmationText must be exactly "RESET_ANALYTICS"'
+        );
+      }
     }
 
     return true;
