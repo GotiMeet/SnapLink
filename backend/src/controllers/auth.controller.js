@@ -251,14 +251,15 @@ export const setPassword = asyncHandler(async (req, res) => {
 export const changePassword = asyncHandler(async (req, res) => {
   const { oldPassword, newPassword } = req.body;
 
-  const user = await authService.changePassword({
+  await authService.changePassword({
     userId: req.user._id,
     oldPassword,
     newPassword,
   });
 
+  clearAuthCookies(res);
+
   return sendSuccess(res, {
-    message: 'Password changed successfully',
-    data: { user: sanitizeUser(user) },
+    message: 'Password changed successfully. Please log in with your new password.',
   });
 });

@@ -9,6 +9,14 @@ import * as authController from '../controllers/auth.controller.js';
 import authMiddleware from '../middleware/auth.middleware.js';
 import validateMiddleware from '../middleware/validate.middleware.js';
 import {
+  registerLimiter,
+  loginLimiter,
+  resendVerificationEmailLimiter,
+  forgotPasswordLimiter,
+  resetPasswordLimiter,
+  googleAuthLimiter,
+} from '../middleware/rateLimit.middleware.js';
+import {
   registerValidator,
   loginValidator,
   verifyEmailValidator,
@@ -29,7 +37,7 @@ const router = Router();
  * @function
  * @memberof module:routes/auth.routes
  */
-router.post('/register', registerValidator, validateMiddleware, authController.register);
+router.post('/register', registerLimiter, registerValidator, validateMiddleware, authController.register);
 
 /**
  * Verifies a user's email address.
@@ -47,6 +55,7 @@ router.post('/verify-email', verifyEmailValidator, validateMiddleware, authContr
  */
 router.post(
   '/resend-verification-email',
+  resendVerificationEmailLimiter,
   resendVerificationEmailValidator,
   validateMiddleware,
   authController.resendVerificationEmail
@@ -58,7 +67,7 @@ router.post(
  * @function
  * @memberof module:routes/auth.routes
  */
-router.post('/login', loginValidator, validateMiddleware, authController.login);
+router.post('/login', loginLimiter, loginValidator, validateMiddleware, authController.login);
 
 /**
  * Rotates the access/refresh token pair from the refresh cookie.
@@ -82,7 +91,7 @@ router.post('/logout', authController.logout);
  * @function
  * @memberof module:routes/auth.routes
  */
-router.post('/forgot-password', forgotPasswordValidator, validateMiddleware, authController.forgotPassword);
+router.post('/forgot-password', forgotPasswordLimiter, forgotPasswordValidator, validateMiddleware, authController.forgotPassword);
 
 /**
  * Resets the password using a reset token.
@@ -90,7 +99,7 @@ router.post('/forgot-password', forgotPasswordValidator, validateMiddleware, aut
  * @function
  * @memberof module:routes/auth.routes
  */
-router.post('/reset-password', resetPasswordValidator, validateMiddleware, authController.resetPassword);
+router.post('/reset-password', resetPasswordLimiter, resetPasswordValidator, validateMiddleware, authController.resetPassword);
 
 /**
  * Authenticates or provisions a user via Google OAuth.
@@ -98,7 +107,7 @@ router.post('/reset-password', resetPasswordValidator, validateMiddleware, authC
  * @function
  * @memberof module:routes/auth.routes
  */
-router.post('/google', googleAuthValidator, validateMiddleware, authController.googleAuth);
+router.post('/google', googleAuthLimiter, googleAuthValidator, validateMiddleware, authController.googleAuth);
 
 /**
  * Returns the currently authenticated user.
