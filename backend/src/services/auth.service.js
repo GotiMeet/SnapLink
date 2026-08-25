@@ -478,5 +478,6 @@ export const changePassword = async ({ userId, oldPassword, newPassword }) => {
   user.password = await hashPassword(newPassword);
   await user.save();
 
-  return user;
+  // Invalidate every existing session after a password change so all devices must re-authenticate.
+  await sessionService.revokeAllUserSessions(user._id);
 };

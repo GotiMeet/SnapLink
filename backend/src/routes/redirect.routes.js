@@ -11,6 +11,7 @@ import { Router } from 'express';
 
 import * as redirectController from '../controllers/redirect.controller.js';
 import validateMiddleware from '../middleware/validate.middleware.js';
+import { unlockShortLinkLimiter } from '../middleware/rateLimit.middleware.js';
 import { unlockShortLinkValidator } from '../validators/url.validator.js';
 
 const router = Router();
@@ -29,6 +30,12 @@ router.get('/:shortCode', redirectController.redirectToOriginalUrl);
  * @function
  * @memberof module:routes/redirect.routes
  */
-router.post('/:shortCode', unlockShortLinkValidator, validateMiddleware, redirectController.unlockShortLink);
+router.post(
+  '/:shortCode',
+  unlockShortLinkLimiter,
+  unlockShortLinkValidator,
+  validateMiddleware,
+  redirectController.unlockShortLink
+);
 
 export default router;
