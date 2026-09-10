@@ -208,6 +208,22 @@ export const restoreProject = ({ projectId, ownerId }) =>
       }
 
       const now = new Date();
+
+      // A delete date that passed while the project sat deleted is spent, so it
+      // is cleared before the links come back. Leaving it would let the
+      // scheduler remove them again within the minute, this time as
+      // DELETED_LINK, so they would not return with a later project restore
+      // either. A date still in the future is untouched and continues to apply.
+      await ShortUrl.updateMany(
+        {
+          project: project._id,
+          status: URL_STATUS.DELETED_PROJECT,
+          scheduledDeleteAt: { $ne: null, $lte: now },
+        },
+        { $set: { scheduledDeleteAt: null } },
+        { session }
+      );
+
       await ShortUrl.updateMany(
         {
           project: project._id,

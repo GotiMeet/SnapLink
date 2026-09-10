@@ -65,34 +65,41 @@ const hasPasswordValue = (value) =>
 
 /**
  * Builds the refusal returned when a link cannot go live inside its project.
- * The project travels with it so the client can offer restoring that project,
- * moving the link elsewhere, or creating a new one.
+ * The project travels with it so the client can name that project and offer to
+ * restore it. Only actions the API actually supports are suggested here.
  * @function projectUnavailableError
  */
 const projectUnavailableError = (message, project) =>
   new ApiError(409, message, [
     {
       field: 'project',
-      message:
-        'Restore the project, move the link to another project, or create a new one.',
+      message: 'Restore the project first, then restore this link.',
       project,
     },
   ]);
 
 /**
- * Attaches the lifetime visit total that analytics now owns, so a link still
- * reports a click count without the schema storing one.
- * The figure covers QR scans as well, which is what the stored counter always
- * did, and a link with no recorded visit yet reports zero.
+ * Attaches the lifetime visit totals that analytics now owns, so a link still
+ * reports its usage without the schema storing a counter.
+ * `clickCount` is the combined figure the stored counter always carried, and it
+ * is reported alongside the two halves it is made of, so a caller can show the
+ * web/QR split without asking the analytics endpoints link by link.
+ * A link with no recorded visit yet reports zero for all three.
  * @function withLifetimeTotals
  */
 const withLifetimeTotals = async (shortUrls) => {
   const totals = await getLifetimeTotals(shortUrls.map((shortUrl) => shortUrl._id));
 
-  return shortUrls.map((shortUrl) => ({
-    ...shortUrl.toObject(),
-    clickCount: totals.get(String(shortUrl._id))?.totalVisits || 0,
-  }));
+  return shortUrls.map((shortUrl) => {
+    const total = totals.get(String(shortUrl._id));
+
+    return {
+      ...shortUrl.toObject(),
+      clickCount: total?.totalVisits || 0,
+      clicks: total?.clicks || 0,
+      qrScans: total?.qrScans || 0,
+    };
+  });
 };
 
 /**
@@ -279,8 +286,10 @@ export const createUrl = async ({
       createdUrl = shortUrl;
     });
 
-    // A link that has just been created cannot have been visited yet.
-    return { ...createdUrl.toObject(), clickCount: 0 };
+    // A link that has just been created cannot have been visited yet. The same
+    // three fields are reported as on every other response, so a created link
+    // and a listed one have one shape.
+    return { ...createdUrl.toObject(), clickCount: 0, clicks: 0, qrScans: 0 };
   } catch (error) {
     // The unique indexes are the final guard when two requests claim the same
     // alias, or the same title inside one project, at once.
@@ -480,8 +489,8 @@ export const softDeleteUrl = async ({ urlId, ownerId }) => {
  * Restores a link the owner had deleted.
  * A link whose project is itself deleted is refused rather than restored, so an
  * active link can never sit inside a deleted project. The project travels with
- * the refusal so the client can offer restoring it, moving the link to another
- * project, or creating a new one; the link stays DELETED_LINK until then.
+ * the refusal so the client can offer restoring it or creating a new one; the
+ * link stays DELETED_LINK until then.
  * @function restoreUrl
  */
 export const restoreUrl = async ({ urlId, ownerId }) => {
@@ -491,12 +500,22 @@ export const restoreUrl = async ({ urlId, ownerId }) => {
     status: URL_STATUS.DELETED_LINK,
   });
 
+  const now = new Date();
+
   const isFutureScheduled =
     shortUrl.scheduledLiveAt &&
-    new Date(shortUrl.scheduledLiveAt).getTime() > Date.now();
+    new Date(shortUrl.scheduledLiveAt).getTime() > now.getTime();
   const targetStatus = isFutureScheduled
     ? URL_STATUS.INACTIVE
     : URL_STATUS.ACTIVE;
+
+  // A delete date that has already passed is spent. Restoring is a deliberate
+  // request for the link to be live again, so the elapsed date is cleared;
+  // leaving it would let the scheduler remove the link again within the minute.
+  // A date still in the future is untouched and continues to apply.
+  const hasElapsedExpiry =
+    shortUrl.scheduledDeleteAt &&
+    new Date(shortUrl.scheduledDeleteAt).getTime() <= now.getTime();
 
   const session = await mongoose.startSession();
 
@@ -525,7 +544,13 @@ export const restoreUrl = async ({ urlId, ownerId }) => {
       try {
         await ShortUrl.updateOne(
           { _id: shortUrl._id, owner: ownerId, status: URL_STATUS.DELETED_LINK },
-          { $set: { status: targetStatus, deletedAt: null } },
+          {
+            $set: {
+              status: targetStatus,
+              deletedAt: null,
+              ...(hasElapsedExpiry ? { scheduledDeleteAt: null } : {}),
+            },
+          },
           { session }
         );
       } catch (error) {
@@ -535,6 +560,10 @@ export const restoreUrl = async ({ urlId, ownerId }) => {
 
     shortUrl.status = targetStatus;
     shortUrl.deletedAt = null;
+
+    if (hasElapsedExpiry) {
+      shortUrl.scheduledDeleteAt = null;
+    }
 
     return { shortUrl: await withLifetimeTotal(shortUrl), project };
   } finally {
