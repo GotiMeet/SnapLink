@@ -1,56 +1,45 @@
-import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { resendVerificationEmail } from '@/api/auth';
-import { ApiError } from '@/lib/api';
-import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/Button';
+import { useAuth } from '@/hooks/useAuth';
+import { useCooldown } from '@/hooks/useCooldown';
+import { ApiError } from '@/lib/api';
+
+const RESEND_COOLDOWN_SECONDS = 60;
 
 /**
- * Shown on every authenticated page while the account is unverified.
+ * Contextual alert shown above every authenticated page while the account is
+ * unverified (SCR-AUTH-12E).
  *
- * The 60-second cooldown is timed client-side after a successful send: there is
- * no endpoint to read the remaining cooldown, and the backend only reveals it
- * through a 429 (PROJECT_MASTER.md section 11).
+ * The 60-second wait is timed client-side after a send: no endpoint reports the
+ * remaining cooldown, and the server only discloses it by refusing with a 429
+ * (PROJECT_MASTER.md section 11). A rejection starts the timer too, so a user
+ * who hits the limit is not invited straight back into it.
  */
 export function UnverifiedEmailBanner() {
   const { user } = useAuth();
-  const [sending, setSending] = useState(false);
-  const [cooldown, setCooldown] = useState(0);
+  const cooldown = useCooldown();
 
-  if (!user || user.isEmailVerified) return null;
-
-  const startCooldown = () => {
-    setCooldown(60);
-    const id = window.setInterval(() => {
-      setCooldown((value) => {
-        if (value <= 1) {
-          window.clearInterval(id);
-          return 0;
-        }
-        return value - 1;
-      });
-    }, 1000);
-  };
-
-  const handleResend = async () => {
-    setSending(true);
-    try {
-      await resendVerificationEmail(user.email);
+  const resendMutation = useMutation({
+    mutationFn: resendVerificationEmail,
+    onSuccess: () => {
       toast.success('Verification email sent. Check your inbox.');
-      startCooldown();
-    } catch (error) {
+      cooldown.start(RESEND_COOLDOWN_SECONDS);
+    },
+    onError: (error) => {
       if (error instanceof ApiError && error.isRateLimited) {
         toast.error(error.message);
-        startCooldown();
-      } else {
-        toast.error('Could not send the email. Please try again.');
+        cooldown.start(RESEND_COOLDOWN_SECONDS);
+        return;
       }
-    } finally {
-      setSending(false);
-    }
-  };
+      toast.error('Could not send the email. Please try again.');
+    },
+  });
+
+  if (!user || user.isEmailVerified) return null;
 
   return (
     <div
@@ -65,11 +54,11 @@ export function UnverifiedEmailBanner() {
       <Button
         size="sm"
         variant="secondary"
-        onClick={handleResend}
-        loading={sending}
-        disabled={cooldown > 0}
+        onClick={() => resendMutation.mutate(user.email)}
+        loading={resendMutation.isPending}
+        disabled={cooldown.active}
       >
-        {cooldown > 0 ? `Resend in ${cooldown}s` : 'Resend email'}
+        {cooldown.active ? `Resend in ${cooldown.remaining}s` : 'Resend email'}
       </Button>
     </div>
   );
