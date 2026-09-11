@@ -3,6 +3,7 @@ import { Unplug } from 'lucide-react';
 
 import { AuthCard, AuthCardIcon } from '@/components/auth/AuthCard';
 import { Button } from '@/components/ui/Button';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 /**
  * SCR-PUB-11.
@@ -13,6 +14,7 @@ import { Button } from '@/components/ui/Button';
  * and naming which case applied here would undo that.
  */
 export function LinkUnavailablePage() {
+  usePageMeta({ title: 'Link unavailable', noindex: true });
   return (
     <AuthCard
       icon={
@@ -25,7 +27,7 @@ export function LinkUnavailablePage() {
       footer={
         <>
           Want links like this?{' '}
-          <Link to="/signup" className="text-primary-600 hover:underline">
+          <Link to="/signup" className="text-primary-text hover:underline">
             Create your own short links
           </Link>
         </>

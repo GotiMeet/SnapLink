@@ -15,6 +15,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCooldown } from '@/hooks/useCooldown';
 import { ApiError } from '@/lib/api';
 import { isPasswordValid } from '@/lib/password';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -30,6 +31,11 @@ const RESEND_COOLDOWN_SECONDS = 60;
  * app like a login.
  */
 export function SignupPage() {
+  usePageMeta({
+    title: 'Create account',
+    description: 'Create a free SnapLink account.',
+    noindex: true,
+  });
   const { signIn } = useAuth();
 
   const [fullName, setFullName] = useState('');
@@ -73,7 +79,7 @@ export function SignupPage() {
           </>
         }
         footer={
-          <Link to="/login" className="text-primary-600 hover:underline">
+          <Link to="/login" className="text-primary-text hover:underline">
             Back to sign in
           </Link>
         }
@@ -121,7 +127,7 @@ export function SignupPage() {
       footer={
         <>
           Already have an account?{' '}
-          <Link to="/login" className="text-primary-600 hover:underline">
+          <Link to="/login" className="text-primary-text hover:underline">
             Log in
           </Link>
         </>
@@ -131,7 +137,7 @@ export function SignupPage() {
         {emailTaken && (
           <Alert tone="danger">
             An account with this email already exists.{' '}
-            <Link to="/login" className="text-primary-600 hover:underline">
+            <Link to="/login" className="text-primary-text hover:underline">
               Log in instead
             </Link>
             .

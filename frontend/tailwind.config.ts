@@ -24,12 +24,19 @@ export default {
           600: withOpacity('--color-primary-600'),
           700: withOpacity('--color-primary-700'),
           800: withOpacity('--color-primary-800'),
+          // Legible on both surfaces; the numbered stops stay as fills.
+          text: withOpacity('--color-primary-text'),
         },
-        // Semantic roles. These do not change between themes.
+        // Semantic roles. The base hex is the fill; the `-text` tone is the
+        // same hue at a lightness that reads at 4.5:1 on its own surface.
         success: withOpacity('--color-success'),
+        'success-text': withOpacity('--color-success-text'),
         warning: withOpacity('--color-warning'),
+        'warning-text': withOpacity('--color-warning-text'),
         danger: withOpacity('--color-danger'),
+        'danger-text': withOpacity('--color-danger-text'),
         accent: withOpacity('--color-accent'),
+        'accent-text': withOpacity('--color-accent-text'),
 
         surface: {
           canvas: withOpacity('--surface-canvas'),

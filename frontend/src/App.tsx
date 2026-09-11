@@ -6,7 +6,6 @@ import { AppShell } from '@/components/layout/AppShell';
 import { BareLayout } from '@/components/layout/BareLayout';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { NotFoundPage } from '@/pages/NotFound';
-import { Placeholder } from '@/pages/Placeholder';
 import { AnalyticsOverviewPage } from '@/pages/app/AnalyticsOverview';
 import { DashboardPage } from '@/pages/app/Dashboard';
 import { LinkAnalyticsPage } from '@/pages/app/LinkAnalytics';
@@ -18,7 +17,11 @@ import { SettingsLayout } from '@/pages/app/SettingsLayout';
 import { SettingsProfilePage } from '@/pages/app/SettingsProfile';
 import { SettingsSecurityPage } from '@/pages/app/SettingsSecurity';
 import { ProjectsPage } from '@/pages/app/Projects';
+import { AboutPage } from '@/pages/public/About';
+import { ContactPage } from '@/pages/public/Contact';
+import { FeaturesPage } from '@/pages/public/Features';
 import { ForgotPasswordPage } from '@/pages/public/ForgotPassword';
+import { HomePage } from '@/pages/public/Home';
 import { LinkUnavailablePage } from '@/pages/public/LinkUnavailable';
 import { LoginPage } from '@/pages/public/Login';
 import { ResetPasswordPage } from '@/pages/public/ResetPassword';
@@ -27,8 +30,7 @@ import { UnlockPage } from '@/pages/public/Unlock';
 import { VerifyEmailPage } from '@/pages/public/VerifyEmail';
 
 /**
- * Route table from PROJECT_MASTER.md section 8. Every screen code is reserved
- * here in Phase 0 so later phases only swap a Placeholder for its real screen.
+ * Route table from PROJECT_MASTER.md section 8.
  *
  * Modals and drawers (Create Project, Create Link, QR Viewer, Restore Conflict)
  * are deliberately absent: they are components mounted by their parent page,
@@ -39,16 +41,10 @@ export default function App() {
     <Routes>
       {/* Marketing pages: header + footer chrome. */}
       <Route element={<PublicLayout />}>
-        <Route index element={<Placeholder code="SCR-PUB-01" name="Home" />} />
-        <Route
-          path="features"
-          element={<Placeholder code="SCR-PUB-10" name="Features" />}
-        />
-        <Route path="about" element={<Placeholder code="SCR-PUB-02" name="About" />} />
-        <Route
-          path="contact"
-          element={<Placeholder code="SCR-PUB-03" name="Contact" />}
-        />
+        <Route index element={<HomePage />} />
+        <Route path="features" element={<FeaturesPage />} />
+        <Route path="about" element={<AboutPage />} />
+        <Route path="contact" element={<ContactPage />} />
       </Route>
 
       {/* Auth and public gate: no chrome. */}

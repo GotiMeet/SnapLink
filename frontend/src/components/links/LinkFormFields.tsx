@@ -78,7 +78,7 @@ export function VisibilityFields({
             <Icon
               className={cn(
                 'mt-3xs h-4 w-4 shrink-0',
-                visibility === value ? 'text-primary-600' : 'text-content-tertiary'
+                visibility === value ? 'text-primary-text' : 'text-content-tertiary'
               )}
               aria-hidden
             />

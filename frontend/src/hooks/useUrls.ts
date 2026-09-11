@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { getUrl, listUrls } from '@/api/urls';
 
-export const urlKeys = {
+const urlKeys = {
   list: (params: { projectId?: string; deleted?: boolean }) =>
     ['urls', { projectId: params.projectId, deleted: params.deleted ?? false }] as const,
   detail: (urlId: string) => ['urls', urlId] as const,

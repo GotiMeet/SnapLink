@@ -36,7 +36,7 @@ export function ProjectCard({
       <div className="flex items-start justify-between gap-xs">
         <span
           aria-hidden
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary-50 text-primary-600"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary-50 text-primary-text"
         >
           <Folder className="h-5 w-5" />
         </span>
@@ -70,7 +70,7 @@ export function ProjectCard({
               onClick={onDelete}
               className={cn(
                 menuItemClass,
-                'text-danger hover:bg-danger/10 hover:text-danger'
+                'text-danger-text hover:bg-danger/10 hover:text-danger-text'
               )}
             >
               <Trash2 className="h-4 w-4 shrink-0" aria-hidden />

@@ -14,6 +14,7 @@ import { Skeleton } from '@/components/ui/Skeleton';
 import { useProjects } from '@/hooks/useProjects';
 import { useUrls } from '@/hooks/useUrls';
 import type { Project, ShortUrl } from '@/types/models';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 type SortKey = 'updated' | 'title';
 
@@ -41,6 +42,7 @@ function totalsByProject(urls: ShortUrl[] | undefined) {
 
 /** SCR-AUTH-02. */
 export function ProjectsPage() {
+  usePageMeta({ title: 'Projects', noindex: true });
   const navigate = useNavigate();
 
   const projectsQuery = useProjects();

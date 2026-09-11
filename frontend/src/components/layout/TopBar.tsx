@@ -8,6 +8,7 @@ import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
 import { cn } from '@/lib/cn';
 import { BrandMark } from './BrandMark';
 import { CreateMenu } from './CreateMenu';
+import { QuickSearch } from './QuickSearch';
 import { ProfileMenu } from './ProfileMenu';
 import { SidebarNav } from './Sidebar';
 
@@ -43,7 +44,7 @@ function ThemeToggle() {
           className={cn(
             'rounded-sm p-2xs transition-colors',
             theme === value
-              ? 'bg-primary-50 text-primary-600'
+              ? 'bg-primary-50 text-primary-text'
               : 'text-content-tertiary hover:text-content-primary'
           )}
         >
@@ -55,12 +56,9 @@ function ThemeToggle() {
 }
 
 /**
- * 64px bar: brand, "+ Create", theme toggle, account menu.
- *
- * The quick-search pill from section 8 is still absent. It is a client-side
- * filter over loaded links and projects, and it belongs with the command
- * palette rather than as a third partial search box beside the two the catalog
- * pages already have.
+ * 64px bar: brand, quick search, "+ Create", theme toggle, account menu —
+ * the five things section 8 specifies, and no notifications bell, because no
+ * notification system exists.
  */
 export function TopBar() {
   const { user } = useAuth();
@@ -97,13 +95,22 @@ export function TopBar() {
         </Dialog.Portal>
       </Dialog.Root>
 
-      <Link to="/app/dashboard" className="rounded-md">
+      <Link to="/app/dashboard" className="shrink-0 rounded-md">
         <BrandMark compact />
       </Link>
 
-      <div className="ml-auto flex items-center gap-sm">
+      <div className="ml-auto flex min-w-0 items-center gap-xs sm:gap-sm">
+        <QuickSearch />
         <CreateMenu />
-        <ThemeToggle />
+        {/*
+          Hidden on phones, where the bar has no room for a three-state control
+          once search, create and the account menu are present. Theme is not
+          lost: its permanent home is Settings → Profile, which is where
+          section 9 puts it anyway.
+        */}
+        <div className="hidden sm:block">
+          <ThemeToggle />
+        </div>
         {user && <ProfileMenu user={user} />}
       </div>
     </header>

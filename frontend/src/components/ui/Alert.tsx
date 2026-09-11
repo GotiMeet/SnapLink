@@ -13,10 +13,10 @@ const TONES: Record<Tone, string> = {
 };
 
 const ICON_TONES: Record<Tone, string> = {
-  info: 'text-primary-600',
-  success: 'text-success',
-  warning: 'text-warning',
-  danger: 'text-danger',
+  info: 'text-primary-text',
+  success: 'text-success-text',
+  warning: 'text-warning-text',
+  danger: 'text-danger-text',
 };
 
 const ICONS: Record<Tone, typeof Info> = {

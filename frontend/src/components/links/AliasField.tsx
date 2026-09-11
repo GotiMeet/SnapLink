@@ -84,13 +84,13 @@ export function AliasField({
             </span>
           )}
           {!isOwnAlias && !checking && available === true && (
-            <span className="flex items-center gap-3xs text-success">
+            <span className="flex items-center gap-3xs text-success-text">
               <Check className="h-3 w-3" aria-hidden />
               Available
             </span>
           )}
           {!isOwnAlias && !checking && available === false && (
-            <span className="flex items-center gap-3xs text-warning">
+            <span className="flex items-center gap-3xs text-warning-text">
               <TriangleAlert className="h-3 w-3" aria-hidden />
               This alias is already taken
             </span>

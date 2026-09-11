@@ -32,6 +32,7 @@ import { useUrls } from '@/hooks/useUrls';
 import { ApiError } from '@/lib/api';
 import { formatCount, formatDate } from '@/lib/format';
 import type { Project, ShortUrl } from '@/types/models';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 /** SCR-AUTH-03. */
 export function ProjectDetailPage() {
@@ -41,6 +42,7 @@ export function ProjectDetailPage() {
 
   // On a 404 there is no title coming, so the crumb is given one rather than
   // left as a skeleton that spins for a project that does not exist.
+  usePageMeta({ title: projectQuery.data?.title ?? 'Project', noindex: true });
   useBreadcrumbTitle(
     projectQuery.data?.title ?? (projectQuery.isError ? 'Not found' : undefined)
   );
@@ -66,6 +68,7 @@ export function ProjectDetailPage() {
     return (
       <EmptyState
         icon={<FolderX className="h-8 w-8" aria-hidden />}
+        as="h1"
         title={notFound ? 'Project not found or deleted' : 'Failed to load this project'}
         description={
           notFound
@@ -115,7 +118,7 @@ export function ProjectDetailPage() {
             <Button
               variant="ghost"
               size="sm"
-              className="text-danger hover:bg-danger/10 hover:text-danger"
+              className="text-danger-text hover:bg-danger/10 hover:text-danger-text"
               onClick={() => setDeleting(project)}
             >
               <Trash2 className="h-4 w-4" aria-hidden />
@@ -297,7 +300,7 @@ function ProjectTitleEditor({ project }: { project: Project }) {
       </div>
 
       {apiError && !apiError.isConflict && !apiError.isValidation && (
-        <p className="text-body-md text-danger">{apiError.message}</p>
+        <p className="text-body-md text-danger-text">{apiError.message}</p>
       )}
     </form>
   );

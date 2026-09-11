@@ -1,6 +1,7 @@
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 
 import { TabPanel, Tabs } from '@/components/ui/Tabs';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 type SettingsTab = 'profile' | 'security';
 
@@ -19,6 +20,7 @@ type SettingsTab = 'profile' | 'security';
  * account menu both link straight to them, so each has to be reachable by URL.
  */
 export function SettingsLayout() {
+  usePageMeta({ title: 'Settings', noindex: true });
   const { pathname } = useLocation();
   const navigate = useNavigate();
 

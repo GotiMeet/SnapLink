@@ -63,7 +63,7 @@ export function RenameProjectModal({
     >
       <form className="flex flex-col gap-md" onSubmit={submit} noValidate>
         {apiError && !apiError.isConflict && !apiError.isValidation && (
-          <p className="text-body-md text-danger">{apiError.message}</p>
+          <p className="text-body-md text-danger-text">{apiError.message}</p>
         )}
 
         <Input

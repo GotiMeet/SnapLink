@@ -41,7 +41,7 @@ export function CopyButton({
       className={cn(
         'rounded-md p-2xs transition-colors',
         copied
-          ? 'text-success'
+          ? 'text-success-text'
           : 'text-content-tertiary hover:bg-surface-subtle hover:text-content-primary',
         className
       )}

@@ -11,7 +11,7 @@
  */
 
 const ALIAS_PATTERN = /^[a-zA-Z0-9_-]+$/;
-export const ALIAS_MIN = 3;
+const ALIAS_MIN = 3;
 export const ALIAS_MAX = 32;
 /** Reserved because short links resolve at the application root. */
 const RESERVED_ALIASES = ['api', 'health'];

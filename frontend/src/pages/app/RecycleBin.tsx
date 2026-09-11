@@ -21,6 +21,7 @@ import { useUrls } from '@/hooks/useUrls';
 import { ApiError } from '@/lib/api';
 import { formatCount, formatRelative } from '@/lib/format';
 import type { Project, ShortUrl } from '@/types/models';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 const shortLinkHost = env.appUrl.replace(/^https?:\/\//, '');
 
@@ -47,6 +48,7 @@ interface ConflictState {
  * would never have a second value to show.
  */
 export function RecycleBinPage() {
+  usePageMeta({ title: 'Recycle Bin', noindex: true });
   const [params, setParams] = useSearchParams();
   const tab: TabId = params.get('tab') === 'projects' ? 'projects' : 'links';
 
@@ -486,7 +488,7 @@ function DeletedProjects({
           errorAction={
             <Link
               to="/app/projects"
-              className="rounded-sm text-primary-600 hover:underline"
+              className="rounded-sm text-primary-text hover:underline"
             >
               Rename the active project
             </Link>
@@ -530,7 +532,7 @@ function RestoreRow({
         <div className="mt-2xs flex flex-wrap items-center gap-xs">{meta}</div>
 
         {error && (
-          <p role="alert" className="mt-xs text-body-sm text-danger">
+          <p role="alert" className="mt-xs text-body-sm text-danger-text">
             {error} {errorAction}
           </p>
         )}

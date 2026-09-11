@@ -161,7 +161,7 @@ export function CreateLinkDrawer({
           <div className="flex flex-col items-center gap-md text-center">
             <span
               aria-hidden
-              className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success"
+              className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10 text-success-text"
             >
               <CheckCircle2 className="h-8 w-8" />
             </span>
@@ -171,7 +171,7 @@ export function CreateLinkDrawer({
             </p>
 
             <div className="flex w-full items-center gap-xs rounded-md border border-border-subtle bg-surface-subtle px-sm py-xs">
-              <span className="min-w-0 flex-1 break-all text-left font-mono text-mono-code text-primary-600">
+              <span className="min-w-0 flex-1 break-all text-left font-mono text-mono-code text-primary-text">
                 {shortUrl}
               </span>
               <CopyButton
@@ -276,12 +276,12 @@ export function CreateLinkDrawer({
             ))}
           </select>
           {projectsQuery.isSuccess && projectsQuery.data.length === 0 && (
-            <span className="text-body-sm text-danger">
+            <span className="text-body-sm text-danger-text">
               Create a project first — every link needs one.
             </span>
           )}
           {apiError?.fieldError('projectId') && (
-            <span className="text-body-sm text-danger">
+            <span className="text-body-sm text-danger-text">
               {apiError.fieldError('projectId')}
             </span>
           )}

@@ -12,6 +12,7 @@ import { PasswordInput } from '@/components/ui/PasswordInput';
 import { useAuth } from '@/hooks/useAuth';
 import { useCooldown } from '@/hooks/useCooldown';
 import { ApiError } from '@/lib/api';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -24,6 +25,11 @@ const RESEND_COOLDOWN_SECONDS = 60;
  * redirect here would mean two places deciding where a login lands.
  */
 export function LoginPage() {
+  usePageMeta({
+    title: 'Sign in',
+    description: 'Sign in to your SnapLink account.',
+    noindex: true,
+  });
   const { signIn } = useAuth();
   const [params] = useSearchParams();
 
@@ -70,7 +76,7 @@ export function LoginPage() {
       footer={
         <>
           Don&apos;t have an account?{' '}
-          <Link to="/signup" className="text-primary-600 hover:underline">
+          <Link to="/signup" className="text-primary-text hover:underline">
             Sign up
           </Link>
         </>
@@ -114,7 +120,7 @@ export function LoginPage() {
           >
             <p>Please verify your email address before logging in.</p>
             {resendMutation.error instanceof ApiError && (
-              <p className="text-danger">{resendMutation.error.message}</p>
+              <p className="text-danger-text">{resendMutation.error.message}</p>
             )}
           </Alert>
         )}
@@ -165,7 +171,7 @@ export function LoginPage() {
             />
             <Link
               to="/forgot-password"
-              className="self-end text-body-sm text-primary-600 hover:underline"
+              className="self-end text-body-sm text-primary-text hover:underline"
             >
               Forgot password?
             </Link>

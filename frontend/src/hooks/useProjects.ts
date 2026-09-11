@@ -7,7 +7,7 @@ import { getProject, listProjects } from '@/api/projects';
  * them so an invalidation elsewhere cannot drift from the key a query registers
  * under — a mismatch there fails silently, leaving a stale list on screen.
  */
-export const projectKeys = {
+const projectKeys = {
   list: (deleted: boolean) => ['projects', { deleted }] as const,
   detail: (projectId: string) => ['projects', projectId] as const,
 };

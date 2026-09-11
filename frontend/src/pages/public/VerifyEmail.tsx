@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/Input';
 import { Spinner } from '@/components/ui/Spinner';
 import { useCooldown } from '@/hooks/useCooldown';
 import { ApiError } from '@/lib/api';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 const RESEND_COOLDOWN_SECONDS = 60;
 
@@ -27,6 +28,7 @@ const RESEND_COOLDOWN_SECONDS = 60;
  * flattened into one generic line.
  */
 export function VerifyEmailPage() {
+  usePageMeta({ title: 'Verify your email', noindex: true });
   const [params] = useSearchParams();
   const token = params.get('token')?.trim() ?? '';
 
@@ -94,7 +96,7 @@ export function VerifyEmailPage() {
       footer={
         <>
           Need a hand?{' '}
-          <Link to="/contact" className="text-primary-600 hover:underline">
+          <Link to="/contact" className="text-primary-text hover:underline">
             Contact support
           </Link>
         </>

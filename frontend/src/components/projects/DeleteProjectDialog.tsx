@@ -95,7 +95,7 @@ export function DeleteProjectDialog({
           them.
         </p>
 
-        {apiError && <p className="text-body-md text-danger">{apiError.message}</p>}
+        {apiError && <p className="text-body-md text-danger-text">{apiError.message}</p>}
       </div>
     </Modal>
   );

@@ -12,6 +12,7 @@ import { PasswordInput } from '@/components/ui/PasswordInput';
 import { useAuth } from '@/hooks/useAuth';
 import { ApiError } from '@/lib/api';
 import { isPasswordValid } from '@/lib/password';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 /**
  * SCR-PUB-08.
@@ -22,6 +23,7 @@ import { isPasswordValid } from '@/lib/password';
  * session survives into the login screen.
  */
 export function ResetPasswordPage() {
+  usePageMeta({ title: 'Set a new password', noindex: true });
   const [params] = useSearchParams();
   const token = params.get('token')?.trim() ?? '';
   const navigate = useNavigate();
@@ -80,7 +82,7 @@ export function ResetPasswordPage() {
       title="Set a new password"
       description="Choose a password you don't use anywhere else."
       footer={
-        <Link to="/login" className="text-primary-600 hover:underline">
+        <Link to="/login" className="text-primary-text hover:underline">
           Back to sign in
         </Link>
       }
@@ -89,7 +91,7 @@ export function ResetPasswordPage() {
         {tokenRejected ? (
           <Alert tone="danger" title="This reset link has expired">
             <p>{apiError.message}</p>
-            <Link to="/forgot-password" className="text-primary-600 hover:underline">
+            <Link to="/forgot-password" className="text-primary-text hover:underline">
               Request a new link
             </Link>
           </Alert>

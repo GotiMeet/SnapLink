@@ -48,7 +48,7 @@ export function RestoreConflictModal({
       <div className="flex gap-sm">
         <span
           aria-hidden
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-warning/10 text-warning"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-warning/10 text-warning-text"
         >
           <FolderX className="h-5 w-5" />
         </span>

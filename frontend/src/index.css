@@ -16,11 +16,27 @@
     --color-primary-600: 15 82 255;
     --color-primary-700: 0 63 216;
     --color-primary-800: 0 50 172;
+    /* Brand blue reads at 5.7:1 on a light surface, so text uses it unchanged. */
+    --color-primary-text: 15 82 255;
 
     --color-success: 0 195 137;
     --color-warning: 245 158 11;
     --color-danger: 239 68 68;
     --color-accent: 99 102 241;
+
+    /*
+     * Text tones for the semantic roles.
+     *
+     * The brand hexes above are calibrated as fills — badge tints, chart
+     * series, button backgrounds — and at 12px on a light surface they measure
+     * around 2:1, well under the 4.5:1 this design system commits to. These are
+     * the same hues taken to a legible lightness, used wherever a semantic
+     * colour carries words rather than area.
+     */
+    --color-success-text: 4 120 87;
+    --color-warning-text: 180 83 9;
+    --color-danger-text: 185 28 28;
+    --color-accent-text: 67 56 202;
 
     --surface-canvas: 248 250 252;
     --surface-card: 255 255 255;
@@ -31,7 +47,8 @@
 
     --text-primary: 15 23 42;
     --text-secondary: 71 85 105;
-    --text-tertiary: 148 163 184;
+    /* Was #94A3B8, which measured 2.5:1 on a card — below AA for body text. */
+    --text-tertiary: 100 116 139;
 
     color-scheme: light;
   }
@@ -43,6 +60,18 @@
     --color-primary-600: 15 82 255;
     --color-primary-700: 45 104 255;
     --color-primary-800: 75 127 255;
+    /*
+     * #0F52FF measures 3.1:1 on a dark card — the brand blue is a fill colour
+     * there, not a text colour. This follows the same lightening section 7
+     * already applies to primary-700 and 800 in dark mode.
+     */
+    --color-primary-text: 125 164 255;
+
+    /* Inverted for dark surfaces: the light-mode tones go too dark to read. */
+    --color-success-text: 52 211 153;
+    --color-warning-text: 251 191 36;
+    --color-danger-text: 248 113 113;
+    --color-accent-text: 165 180 252;
 
     --surface-canvas: 10 13 20;
     --surface-card: 18 23 34;
@@ -53,7 +82,8 @@
 
     --text-primary: 248 250 252;
     --text-secondary: 148 163 184;
-    --text-tertiary: 100 116 139;
+    /* Was #64748B, which measured 3.8:1 on a dark card. */
+    --text-tertiary: 132 146 166;
 
     color-scheme: dark;
   }

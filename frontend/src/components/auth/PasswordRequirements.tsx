@@ -18,7 +18,7 @@ export function PasswordRequirements({ value, id }: { value: string; id?: string
             key={rule.label}
             className={cn(
               'flex items-center gap-2xs text-body-sm',
-              met ? 'text-success' : 'text-content-tertiary'
+              met ? 'text-success-text' : 'text-content-tertiary'
             )}
           >
             <Icon className={cn('h-3 w-3 shrink-0', !met && 'opacity-60')} aria-hidden />

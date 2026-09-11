@@ -46,7 +46,7 @@ export function UnverifiedEmailBanner() {
       role="status"
       className="flex flex-wrap items-center gap-sm border-b border-warning/30 bg-warning/10 px-md py-sm"
     >
-      <AlertTriangle className="h-5 w-5 shrink-0 text-warning" aria-hidden />
+      <AlertTriangle className="h-5 w-5 shrink-0 text-warning-text" aria-hidden />
       <p className="flex-1 text-body-md text-content-primary">
         Verify <strong className="font-semibold">{user.email}</strong> to secure your
         account.
