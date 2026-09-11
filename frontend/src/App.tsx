@@ -14,6 +14,9 @@ import { LinkDetailPage } from '@/pages/app/LinkDetail';
 import { LinksPage } from '@/pages/app/Links';
 import { ProjectDetailPage } from '@/pages/app/ProjectDetail';
 import { RecycleBinPage } from '@/pages/app/RecycleBin';
+import { SettingsLayout } from '@/pages/app/SettingsLayout';
+import { SettingsProfilePage } from '@/pages/app/SettingsProfile';
+import { SettingsSecurityPage } from '@/pages/app/SettingsSecurity';
 import { ProjectsPage } from '@/pages/app/Projects';
 import { ForgotPasswordPage } from '@/pages/public/ForgotPassword';
 import { LinkUnavailablePage } from '@/pages/public/LinkUnavailable';
@@ -81,16 +84,11 @@ export default function App() {
           <Route path="links/:urlId/analytics" element={<LinkAnalyticsPage />} />
           <Route path="analytics" element={<AnalyticsOverviewPage />} />
           <Route path="recycle-bin" element={<RecycleBinPage />} />
-          <Route path="settings">
+          {/* The tab strip is the layout, so both tabs stay reachable by URL. */}
+          <Route path="settings" element={<SettingsLayout />}>
             <Route index element={<Navigate to="/app/settings/profile" replace />} />
-            <Route
-              path="profile"
-              element={<Placeholder code="SCR-AUTH-12" name="Profile Settings" />}
-            />
-            <Route
-              path="security"
-              element={<Placeholder code="SCR-AUTH-13" name="Security Settings" />}
-            />
+            <Route path="profile" element={<SettingsProfilePage />} />
+            <Route path="security" element={<SettingsSecurityPage />} />
           </Route>
         </Route>
       </Route>
