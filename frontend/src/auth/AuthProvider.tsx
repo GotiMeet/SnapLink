@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, type ReactNode } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { getMe } from '@/api/auth';
+import type { User } from '@/types/models';
 import { onSessionExpired } from '@/lib/session';
 import {
   AuthContext,
@@ -21,6 +22,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     retry: false,
     staleTime: 5 * 60_000,
   });
+
+  const signIn = useCallback(
+    (user: User) => {
+      queryClient.setQueryData(ME_QUERY_KEY, user);
+    },
+    [queryClient]
+  );
 
   const clear = useCallback(() => {
     queryClient.clear();
@@ -53,8 +61,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [isPending, isError, data]);
 
   const value = useMemo<AuthContextValue>(
-    () => ({ status, user: data ?? null, refresh, clear }),
-    [status, data, refresh, clear]
+    () => ({ status, user: data ?? null, signIn, refresh, clear }),
+    [status, data, signIn, refresh, clear]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
