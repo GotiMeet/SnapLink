@@ -1,10 +1,11 @@
 import { useQuery } from '@tanstack/react-query';
 
-import { listUrls } from '@/api/urls';
+import { getUrl, listUrls } from '@/api/urls';
 
 export const urlKeys = {
   list: (params: { projectId?: string; deleted?: boolean }) =>
     ['urls', { projectId: params.projectId, deleted: params.deleted ?? false }] as const,
+  detail: (urlId: string) => ['urls', urlId] as const,
 };
 
 /**
@@ -23,5 +24,13 @@ export function useUrls(
     queryKey: urlKeys.list(params),
     queryFn: () => listUrls(params),
     enabled: options.enabled ?? true,
+  });
+}
+
+export function useUrl(urlId: string | undefined) {
+  return useQuery({
+    queryKey: urlKeys.detail(urlId ?? ''),
+    queryFn: () => getUrl(urlId as string),
+    enabled: Boolean(urlId),
   });
 }

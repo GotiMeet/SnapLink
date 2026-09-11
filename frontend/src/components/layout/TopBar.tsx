@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
 import { cn } from '@/lib/cn';
 import { BrandMark } from './BrandMark';
+import { CreateMenu } from './CreateMenu';
 import { ProfileMenu } from './ProfileMenu';
 import { SidebarNav } from './Sidebar';
 
@@ -54,14 +55,12 @@ function ThemeToggle() {
 }
 
 /**
- * 64px bar: brand, theme toggle, account menu.
+ * 64px bar: brand, "+ Create", theme toggle, account menu.
  *
- * The quick-search pill and the "+ Create" dropdown described in section 8 are
- * not here yet on purpose. Both open things that do not exist until later
- * phases — the Create Project modal and the Create Link drawer — and quick
- * search filters links and projects the app has no queries for yet. Section 14
- * schedules them accordingly; a control that opens nothing is worse than its
- * absence.
+ * The quick-search pill from section 8 is still absent. It is a client-side
+ * filter over loaded links and projects, and it belongs with the command
+ * palette rather than as a third partial search box beside the two the catalog
+ * pages already have.
  */
 export function TopBar() {
   const { user } = useAuth();
@@ -99,10 +98,11 @@ export function TopBar() {
       </Dialog.Root>
 
       <Link to="/app/dashboard" className="rounded-md">
-        <BrandMark />
+        <BrandMark compact />
       </Link>
 
       <div className="ml-auto flex items-center gap-sm">
+        <CreateMenu />
         <ThemeToggle />
         {user && <ProfileMenu user={user} />}
       </div>
