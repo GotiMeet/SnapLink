@@ -43,10 +43,13 @@ export function CreateLinkDrawer({
   onOpenChange,
   /** Preselects and locks the project when opened from inside one. */
   projectId,
+  /** Seeds the destination, e.g. from the dashboard's quick-start field. */
+  initialUrl,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   projectId?: string;
+  initialUrl?: string;
 }) {
   const queryClient = useQueryClient();
   const projectsQuery = useProjects();
@@ -75,10 +78,14 @@ export function CreateLinkDrawer({
 
   useEffect(() => {
     if (!open) return;
-    setForm({ ...EMPTY, projectId: projectId ?? '' });
+    setForm({
+      ...EMPTY,
+      projectId: projectId ?? '',
+      originalUrl: initialUrl ?? '',
+    });
     setCreated(null);
     reset();
-  }, [open, projectId, reset]);
+  }, [open, projectId, initialUrl, reset]);
 
   const schedule = validateSchedule(form.liveAt, form.deleteAt);
   const passwordError =

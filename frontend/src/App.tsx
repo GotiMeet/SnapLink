@@ -7,6 +7,7 @@ import { BareLayout } from '@/components/layout/BareLayout';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { NotFoundPage } from '@/pages/NotFound';
 import { Placeholder } from '@/pages/Placeholder';
+import { DashboardPage } from '@/pages/app/Dashboard';
 import { LinkDetailPage } from '@/pages/app/LinkDetail';
 import { LinksPage } from '@/pages/app/Links';
 import { ProjectDetailPage } from '@/pages/app/ProjectDetail';
@@ -69,10 +70,7 @@ export default function App() {
       <Route element={<ProtectedRoute />}>
         <Route path="app" element={<AppShell />}>
           <Route index element={<Navigate to="/app/dashboard" replace />} />
-          <Route
-            path="dashboard"
-            element={<Placeholder code="SCR-AUTH-01" name="Dashboard" />}
-          />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="projects" element={<ProjectsPage />} />
           <Route path="projects/:projectId" element={<ProjectDetailPage />} />
           <Route path="links" element={<LinksPage />} />
