@@ -59,7 +59,7 @@ export function ProfileMenu({ user }: { user: User }) {
           >
             {initialsOf(user.fullName)}
           </span>
-          <span className="hidden min-w-0 flex-col leading-tight sm:flex">
+          <span className="hidden min-w-0 flex-col leading-tight lg:flex">
             <span className="truncate text-label-lg text-content-primary">
               {user.fullName}
             </span>
@@ -95,7 +95,7 @@ export function ProfileMenu({ user }: { user: User }) {
         onClick={handleSignOut}
         className={cn(
           menuItemClass,
-          'text-danger hover:bg-danger/10 hover:text-danger disabled:opacity-50'
+          'text-danger-text hover:bg-danger/10 hover:text-danger-text disabled:opacity-50'
         )}
       >
         <LogOut className="h-4 w-4 shrink-0" aria-hidden />

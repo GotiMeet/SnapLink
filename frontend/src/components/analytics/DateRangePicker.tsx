@@ -76,7 +76,7 @@ export function DateRangePicker({
             className={cn(
               'rounded-full border px-sm py-3xs text-body-sm transition-colors disabled:opacity-50',
               activePreset === days && !showCustom
-                ? 'border-primary-600 bg-primary-50 text-primary-600'
+                ? 'border-primary-600 bg-primary-50 text-primary-text'
                 : 'border-border-subtle text-content-secondary hover:text-content-primary'
             )}
           >
@@ -92,7 +92,7 @@ export function DateRangePicker({
           className={cn(
             'rounded-full border px-sm py-3xs text-body-sm transition-colors disabled:opacity-50',
             showCustom || activePreset === undefined
-              ? 'border-primary-600 bg-primary-50 text-primary-600'
+              ? 'border-primary-600 bg-primary-50 text-primary-text'
               : 'border-border-subtle text-content-secondary hover:text-content-primary'
           )}
         >
@@ -132,7 +132,7 @@ export function DateRangePicker({
           </div>
 
           {customError ? (
-            <p role="alert" className="text-body-sm text-danger">
+            <p role="alert" className="text-body-sm text-danger-text">
               {customError}
             </p>
           ) : (

@@ -58,11 +58,11 @@ export function AuthCardIcon({
   tone?: 'primary' | 'success' | 'danger' | 'accent' | 'warning';
 }) {
   const tones = {
-    primary: 'bg-primary-50 text-primary-600',
-    success: 'bg-success/10 text-success',
-    danger: 'bg-danger/10 text-danger',
-    accent: 'bg-accent/10 text-accent',
-    warning: 'bg-warning/10 text-warning',
+    primary: 'bg-primary-50 text-primary-text',
+    success: 'bg-success/10 text-success-text',
+    danger: 'bg-danger/10 text-danger-text',
+    accent: 'bg-accent/10 text-accent-text',
+    warning: 'bg-warning/10 text-warning-text',
   } as const;
 
   return (

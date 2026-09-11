@@ -31,6 +31,12 @@ export const env = {
    * button is hidden when this is empty rather than rendering a broken control.
    */
   googleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() ?? '',
+  /**
+   * Support channels for the Contact page. Both optional: a channel that is not
+   * configured is not rendered, rather than inventing an address nobody reads.
+   */
+  supportEmail: import.meta.env.VITE_SUPPORT_EMAIL?.trim() ?? '',
+  repoUrl: import.meta.env.VITE_REPO_URL?.trim().replace(/\/+$/, '') ?? '',
 } as const;
 
 export const isGoogleAuthEnabled = env.googleClientId.length > 0;

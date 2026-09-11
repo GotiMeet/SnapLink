@@ -48,6 +48,7 @@ import {
 } from '@/lib/dates';
 import { formatCount, formatDate } from '@/lib/format';
 import type { AnalyticsReport, ShortUrl } from '@/types/models';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 const shortLinkHost = env.appUrl.replace(/^https?:\/\//, '');
 
@@ -64,6 +65,10 @@ export function LinkAnalyticsPage() {
   const linkQuery = useUrl(urlId);
   const analyticsQuery = useLinkAnalytics(urlId, range);
 
+  usePageMeta({
+    title: linkQuery.data ? `${linkQuery.data.title} analytics` : 'Link analytics',
+    noindex: true,
+  });
   useBreadcrumbTitle(
     linkQuery.data?.title ?? (linkQuery.isError ? 'Not found' : undefined)
   );
@@ -79,6 +84,7 @@ export function LinkAnalyticsPage() {
     return (
       <EmptyState
         icon={<BarChart3 className="h-8 w-8" aria-hidden />}
+        as="h1"
         title={
           notFound ? 'Link not found or has been deleted' : 'Failed to load this link'
         }
@@ -143,7 +149,7 @@ function LinkAnalyticsHeader({ link }: { link: ShortUrl }) {
       <div className="min-w-0">
         <h1 className="break-words text-heading-xl">{link.title}</h1>
         <div className="mt-xs flex flex-wrap items-center gap-xs">
-          <span className="font-mono text-mono-code text-primary-600">
+          <span className="font-mono text-mono-code text-primary-text">
             {shortLinkHost}/{link.shortCode}
           </span>
           <CopyButton value={`${env.appUrl}/${link.shortCode}`} label="short link" />

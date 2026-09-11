@@ -52,7 +52,7 @@ export function SidebarNav({
               'flex items-center rounded-md py-xs text-body-md transition-colors',
               collapsed ? 'justify-center px-2xs' : 'gap-sm px-sm',
               isActive
-                ? 'bg-primary-50 font-semibold text-primary-600'
+                ? 'bg-primary-50 font-semibold text-primary-text'
                 : 'text-content-secondary hover:bg-surface-subtle hover:text-content-primary'
             )
           }

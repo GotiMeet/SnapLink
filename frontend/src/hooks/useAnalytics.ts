@@ -4,7 +4,7 @@ import { getLinkAnalytics } from '@/api/analytics';
 import type { DateRange } from '@/lib/dates';
 
 /** Key shape from PROJECT_MASTER.md section 10: ['analytics', urlId, from, to]. */
-export const analyticsKeys = {
+const analyticsKeys = {
   link: (urlId: string, range: DateRange) =>
     ['analytics', urlId, range.from, range.to] as const,
 };

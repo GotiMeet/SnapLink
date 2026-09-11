@@ -9,6 +9,7 @@ import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { ApiError } from '@/lib/api';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 /**
  * SCR-PUB-07.
@@ -19,6 +20,7 @@ import { ApiError } from '@/lib/api';
  * an account-enumeration oracle.
  */
 export function ForgotPasswordPage() {
+  usePageMeta({ title: 'Reset your password', noindex: true });
   const [email, setEmail] = useState('');
 
   const requestMutation = useMutation({ mutationFn: forgotPassword });
@@ -39,7 +41,7 @@ export function ForgotPasswordPage() {
         title="Check your email"
         description="If an account exists with that address, we've sent a reset link. It expires in 15 minutes."
         footer={
-          <Link to="/login" className="text-primary-600 hover:underline">
+          <Link to="/login" className="text-primary-text hover:underline">
             Back to sign in
           </Link>
         }
@@ -55,7 +57,7 @@ export function ForgotPasswordPage() {
       title="Reset your password"
       description="Enter your email address and we'll send you a link to set a new password."
       footer={
-        <Link to="/login" className="text-primary-600 hover:underline">
+        <Link to="/login" className="text-primary-text hover:underline">
           Back to sign in
         </Link>
       }

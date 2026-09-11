@@ -10,6 +10,7 @@ import { PasswordInput } from '@/components/ui/PasswordInput';
 import { env } from '@/env';
 import { ApiError } from '@/lib/api';
 import { cn } from '@/lib/cn';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 /** Short-link origin without its scheme, for displaying `snap.lk/my-code`. */
 const shortLinkHost = env.appUrl.replace(/^https?:\/\//, '');
@@ -30,6 +31,7 @@ const shortLinkHost = env.appUrl.replace(/^https?:\/\//, '');
  * straight to `location.replace`.
  */
 export function UnlockPage() {
+  usePageMeta({ title: 'Protected link', noindex: true });
   const { shortCode = '' } = useParams();
   const [params] = useSearchParams();
 
@@ -75,7 +77,7 @@ export function UnlockPage() {
       title="This link is protected"
       description="Enter the password shared with you to continue to the destination."
       footer={
-        <Link to="/" className="text-primary-600 hover:underline">
+        <Link to="/" className="text-primary-text hover:underline">
           Go to SnapLink
         </Link>
       }

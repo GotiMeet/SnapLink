@@ -88,7 +88,7 @@ export function Tabs<T extends string>({
             className={cn(
               '-mb-px flex shrink-0 items-center gap-xs border-b-2 px-sm py-xs text-body-md transition-colors',
               selected
-                ? 'border-primary-600 font-semibold text-primary-600'
+                ? 'border-primary-600 font-semibold text-primary-text'
                 : 'border-transparent text-content-secondary hover:text-content-primary'
             )}
           >

@@ -63,7 +63,7 @@ export function WelcomeOnboarding({
           >
             <span
               aria-hidden
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary-50 text-primary-600"
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary-50 text-primary-text"
             >
               <Icon className="h-5 w-5" />
             </span>

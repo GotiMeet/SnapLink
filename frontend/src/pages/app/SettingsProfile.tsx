@@ -201,7 +201,7 @@ function EmailRow({ user }: { user: User }) {
       />
 
       {user.isEmailVerified ? (
-        <p className="flex items-center gap-2xs text-body-sm text-success">
+        <p className="flex items-center gap-2xs text-body-sm text-success-text">
           <BadgeCheck className="h-4 w-4" aria-hidden />
           Verified
         </p>
@@ -281,7 +281,7 @@ function ThemeCard() {
             <Icon
               className={cn(
                 'mt-3xs h-4 w-4 shrink-0',
-                theme === value ? 'text-primary-600' : 'text-content-tertiary'
+                theme === value ? 'text-primary-text' : 'text-content-tertiary'
               )}
               aria-hidden
             />

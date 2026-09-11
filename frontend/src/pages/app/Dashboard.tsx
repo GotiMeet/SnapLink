@@ -20,6 +20,7 @@ import { useProjects } from '@/hooks/useProjects';
 import { useUrls } from '@/hooks/useUrls';
 import { formatCount, formatRelative } from '@/lib/format';
 import type { Project, ShortUrl } from '@/types/models';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 const RECENT_LINK_COUNT = 5;
 const SHELF_PROJECT_COUNT = 3;
@@ -64,6 +65,7 @@ function linkCountsByProject(links: ShortUrl[]) {
 
 /** SCR-AUTH-01. */
 export function DashboardPage() {
+  usePageMeta({ title: 'Dashboard', noindex: true });
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -244,7 +246,7 @@ export function DashboardPage() {
               </h2>
               <Link
                 to="/app/links"
-                className="rounded-sm text-body-md text-primary-600 hover:underline"
+                className="rounded-sm text-body-md text-primary-text hover:underline"
               >
                 View all links
               </Link>
@@ -298,7 +300,7 @@ export function DashboardPage() {
               </h2>
               <Link
                 to="/app/projects"
-                className="rounded-sm text-body-md text-primary-600 hover:underline"
+                className="rounded-sm text-body-md text-primary-text hover:underline"
               >
                 View all projects
               </Link>
@@ -369,7 +371,7 @@ function ShelfCard({ project, linkCount }: { project: Project; linkCount: number
     >
       <span
         aria-hidden
-        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary-50 text-primary-600"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary-50 text-primary-text"
       >
         <Folder className="h-5 w-5" />
       </span>

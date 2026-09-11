@@ -49,7 +49,7 @@ export function LinkRow({
         <div className="flex flex-wrap items-center gap-xs">
           <Link
             to={`/app/links/${link._id}`}
-            className="min-w-0 rounded-sm text-label-lg text-content-primary hover:text-primary-600"
+            className="min-w-0 rounded-sm text-label-lg text-content-primary hover:text-primary-text"
           >
             <span className="line-clamp-1 break-all">{link.title}</span>
           </Link>
@@ -64,7 +64,7 @@ export function LinkRow({
         </div>
 
         <div className="mt-2xs flex flex-wrap items-center gap-xs">
-          <span className="font-mono text-mono-code text-primary-600">
+          <span className="font-mono text-mono-code text-primary-text">
             {shortLinkHost}/{link.shortCode}
           </span>
           <CopyButton value={shortUrl} label="short link" />
@@ -153,7 +153,7 @@ export function LinkRow({
               onClick={onDelete}
               className={cn(
                 menuItemClass,
-                'text-danger hover:bg-danger/10 hover:text-danger'
+                'text-danger-text hover:bg-danger/10 hover:text-danger-text'
               )}
             >
               <Trash2 className="h-4 w-4 shrink-0" aria-hidden />

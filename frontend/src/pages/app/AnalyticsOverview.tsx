@@ -17,12 +17,13 @@ import { useUrls } from '@/hooks/useUrls';
 import { cn } from '@/lib/cn';
 import { formatCount, formatRelative } from '@/lib/format';
 import type { ShortUrl } from '@/types/models';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 const shortLinkHost = env.appUrl.replace(/^https?:\/\//, '');
 
 type SortKey = 'visits' | 'recent' | 'created';
 
-const PODIUM_ACCENTS = ['text-warning', 'text-content-tertiary', 'text-[#D97706]'];
+const PODIUM_ACCENTS = ['text-warning-text', 'text-content-tertiary', 'text-[#D97706]'];
 const PODIUM_LABELS = ['Most visited', 'Second', 'Third'];
 
 /**
@@ -38,6 +39,7 @@ const PODIUM_LABELS = ['Most visited', 'Second', 'Third'];
  * request, so there is no previous period to compare against (D5).
  */
 export function AnalyticsOverviewPage() {
+  usePageMeta({ title: 'Analytics', noindex: true });
   const urlsQuery = useUrls();
 
   const [search, setSearch] = useState('');
@@ -215,7 +217,7 @@ export function AnalyticsOverviewPage() {
                         <span className="block truncate text-label-lg text-content-primary">
                           {link.title}
                         </span>
-                        <span className="mt-3xs block truncate font-mono text-mono-code text-primary-600">
+                        <span className="mt-3xs block truncate font-mono text-mono-code text-primary-text">
                           {shortLinkHost}/{link.shortCode}
                         </span>
                         <span className="mt-2xs block text-body-md text-content-secondary">
@@ -310,7 +312,7 @@ function TopLinkCard({ link, total }: { link: ShortUrl | undefined; total: numbe
         icon={Trophy}
         label="Top performing link"
         value={
-          <span className="block truncate font-mono text-heading-md text-primary-600">
+          <span className="block truncate font-mono text-heading-md text-primary-text">
             {shortLinkHost}/{link.shortCode}
           </span>
         }
@@ -330,12 +332,12 @@ function LeaderboardRow({ link, maxVisits }: { link: ShortUrl; maxVisits: number
       <div className="min-w-0 flex-1">
         <Link
           to={`/app/links/${link._id}`}
-          className="rounded-sm text-label-lg text-content-primary hover:text-primary-600"
+          className="rounded-sm text-label-lg text-content-primary hover:text-primary-text"
         >
           <span className="line-clamp-1 break-all">{link.title}</span>
         </Link>
         <div className="mt-2xs flex flex-wrap items-center gap-xs">
-          <span className="font-mono text-mono-code text-primary-600">
+          <span className="font-mono text-mono-code text-primary-text">
             {shortLinkHost}/{link.shortCode}
           </span>
           <CopyButton value={`${env.appUrl}/${link.shortCode}`} label="short link" />
@@ -373,7 +375,7 @@ function LeaderboardRow({ link, maxVisits }: { link: ShortUrl; maxVisits: number
         </p>
         <Link
           to={`/app/links/${link._id}/analytics`}
-          className="flex items-center gap-3xs rounded-md px-xs py-3xs text-body-md text-primary-600 hover:underline"
+          className="flex items-center gap-3xs rounded-md px-xs py-3xs text-body-md text-primary-text hover:underline"
         >
           View analytics
           <ArrowRight className="h-4 w-4" aria-hidden />

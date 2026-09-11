@@ -14,6 +14,7 @@ import { useDeleteLink } from '@/hooks/useDeleteLink';
 import { useProjects } from '@/hooks/useProjects';
 import { useUrls } from '@/hooks/useUrls';
 import type { ShortUrl } from '@/types/models';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
 
@@ -22,6 +23,7 @@ const selectClass =
 
 /** SCR-AUTH-05. */
 export function LinksPage() {
+  usePageMeta({ title: 'All Links', noindex: true });
   // One unfiltered request; project and status narrowing happen in memory.
   // There is no pagination anywhere in v1 (D22), and passing projectId to the
   // API instead would refetch on every filter change for no gain at this scale.

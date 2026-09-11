@@ -27,6 +27,7 @@ import { fromLocalInputValue, toLocalInputValue } from '@/lib/dates';
 import { aliasFormatError, linkPasswordError, validateSchedule } from '@/lib/links';
 import { formatCount, formatDate } from '@/lib/format';
 import type { ShortUrl, Visibility } from '@/types/models';
+import { usePageMeta } from '@/hooks/usePageMeta';
 
 const shortLinkHost = env.appUrl.replace(/^https?:\/\//, '');
 const RESET_PHRASE = 'RESET_ANALYTICS';
@@ -36,6 +37,7 @@ export function LinkDetailPage() {
   const { urlId } = useParams();
   const linkQuery = useUrl(urlId);
 
+  usePageMeta({ title: linkQuery.data?.title ?? 'Link', noindex: true });
   useBreadcrumbTitle(
     linkQuery.data?.title ?? (linkQuery.isError ? 'Not found' : undefined)
   );
@@ -57,6 +59,7 @@ export function LinkDetailPage() {
     return (
       <EmptyState
         icon={<LinkIcon className="h-8 w-8" aria-hidden />}
+        as="h1"
         title={
           notFound ? 'Link not found or has been deleted' : 'Failed to load this link'
         }
@@ -255,7 +258,7 @@ function LinkDetail({ link }: { link: ShortUrl }) {
 
         <Card className="flex flex-wrap items-center gap-md p-md">
           <div className="flex min-w-0 items-center gap-xs">
-            <span className="break-all font-mono text-mono-code text-primary-600">
+            <span className="break-all font-mono text-mono-code text-primary-text">
               {shortLinkHost}/{link.shortCode}
             </span>
             <CopyButton value={shortUrl} label="short link" />
