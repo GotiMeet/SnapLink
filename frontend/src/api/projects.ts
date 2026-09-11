@@ -44,3 +44,16 @@ export const deleteProject = (projectId: string) =>
   request<{ project: Project }>(`/projects/${projectId}`, { method: 'DELETE' }).then(
     (data) => data.project
   );
+
+/**
+ * Restores a soft-deleted project, bringing back the links it had taken offline
+ * in the same transaction.
+ *
+ * Refused with a 409 when an *active* project has claimed the title while this
+ * one sat deleted. A soft-deleted project cannot be renamed, so the conflicting
+ * active project is the one the owner has to rename.
+ */
+export const restoreProject = (projectId: string) =>
+  request<{ project: Project }>(`/projects/${projectId}/restore`, {
+    method: 'PATCH',
+  }).then((data) => data.project);

@@ -13,6 +13,7 @@ import { LinkAnalyticsPage } from '@/pages/app/LinkAnalytics';
 import { LinkDetailPage } from '@/pages/app/LinkDetail';
 import { LinksPage } from '@/pages/app/Links';
 import { ProjectDetailPage } from '@/pages/app/ProjectDetail';
+import { RecycleBinPage } from '@/pages/app/RecycleBin';
 import { ProjectsPage } from '@/pages/app/Projects';
 import { ForgotPasswordPage } from '@/pages/public/ForgotPassword';
 import { LinkUnavailablePage } from '@/pages/public/LinkUnavailable';
@@ -79,10 +80,7 @@ export default function App() {
           <Route path="links/:urlId" element={<LinkDetailPage />} />
           <Route path="links/:urlId/analytics" element={<LinkAnalyticsPage />} />
           <Route path="analytics" element={<AnalyticsOverviewPage />} />
-          <Route
-            path="recycle-bin"
-            element={<Placeholder code="SCR-AUTH-10A" name="Recycle Bin" />}
-          />
+          <Route path="recycle-bin" element={<RecycleBinPage />} />
           <Route path="settings">
             <Route index element={<Navigate to="/app/settings/profile" replace />} />
             <Route
