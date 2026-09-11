@@ -5,34 +5,33 @@ import { toast } from 'sonner';
 import {
   ArrowLeft,
   Check,
-  ExternalLink,
   FolderX,
   Link2,
-  Lock,
   PencilLine,
+  Plus,
   Trash2,
   X,
 } from 'lucide-react';
 
 import { renameProject } from '@/api/projects';
+import { CreateLinkDrawer } from '@/components/links/CreateLinkDrawer';
+import { LinkRow } from '@/components/links/LinkRow';
+import { QrModal } from '@/components/links/QrModal';
 import { DeleteProjectDialog } from '@/components/projects/DeleteProjectDialog';
 import { TITLE_CONFLICT_MESSAGE } from '@/components/projects/messages';
 import { Alert } from '@/components/ui/Alert';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { env } from '@/env';
 import { useBreadcrumbTitle } from '@/hooks/useBreadcrumbTitle';
+import { useDeleteLink } from '@/hooks/useDeleteLink';
 import { useProject } from '@/hooks/useProjects';
 import { useUrls } from '@/hooks/useUrls';
 import { ApiError } from '@/lib/api';
 import { formatCount, formatDate } from '@/lib/format';
 import type { Project, ShortUrl } from '@/types/models';
-
-const shortLinkHost = env.appUrl.replace(/^https?:\/\//, '');
 
 /** SCR-AUTH-03. */
 export function ProjectDetailPage() {
@@ -47,6 +46,7 @@ export function ProjectDetailPage() {
   );
 
   const [deleting, setDeleting] = useState<Project | null>(null);
+  const [creatingLink, setCreatingLink] = useState(false);
   const navigate = useNavigate();
 
   if (projectQuery.isPending) {
@@ -107,15 +107,21 @@ export function ProjectDetailPage() {
             Updated {formatDate(project.updatedAt)}
           </p>
 
-          <Button
-            variant="ghost"
-            size="sm"
-            className="ml-auto text-danger hover:bg-danger/10 hover:text-danger"
-            onClick={() => setDeleting(project)}
-          >
-            <Trash2 className="h-4 w-4" aria-hidden />
-            Delete project
-          </Button>
+          <div className="ml-auto flex flex-wrap items-center gap-xs">
+            <Button onClick={() => setCreatingLink(true)}>
+              <Plus className="h-4 w-4" aria-hidden />
+              Create link in this project
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-danger hover:bg-danger/10 hover:text-danger"
+              onClick={() => setDeleting(project)}
+            >
+              <Trash2 className="h-4 w-4" aria-hidden />
+              Delete project
+            </Button>
+          </div>
         </div>
       </header>
 
@@ -145,11 +151,23 @@ export function ProjectDetailPage() {
               icon={<Link2 className="h-8 w-8" aria-hidden />}
               title="This project has no short links yet"
               description="Create your first link in this project to start sharing and capturing click data."
+              action={
+                <Button onClick={() => setCreatingLink(true)}>
+                  <Plus className="h-4 w-4" aria-hidden />
+                  Create short link
+                </Button>
+              }
             />
           </Card>
         ) : (
           <ProjectLinks links={links} />
         ))}
+
+      <CreateLinkDrawer
+        open={creatingLink}
+        onOpenChange={setCreatingLink}
+        projectId={project._id}
+      />
 
       <DeleteProjectDialog
         project={deleting}
@@ -286,72 +304,34 @@ function ProjectTitleEditor({ project }: { project: Project }) {
 }
 
 /**
- * Read-only list of the project's links.
- *
- * Copy, QR, and the per-row action menu arrive in Phase 4 with the shared link
- * row; this shows what the project contains without implying controls that do
- * not work yet.
+ * The project's links, using the same row as the All Links catalog so copy, QR,
+ * analytics and the action menu behave identically in both places. The project
+ * badge is omitted: every row here belongs to the project already named above.
  */
 function ProjectLinks({ links }: { links: ShortUrl[] }) {
+  const [qrFor, setQrFor] = useState<ShortUrl | null>(null);
+  const { deleteLink } = useDeleteLink();
+
   return (
-    <Card className="overflow-hidden">
-      <h2 className="border-b border-border-subtle px-md py-sm text-heading-md">
-        Links in this project
-      </h2>
+    <>
+      <Card className="overflow-hidden">
+        <h2 className="border-b border-border-subtle px-md py-sm text-heading-md">
+          Links in this project
+        </h2>
 
-      <ul className="divide-y divide-border-subtle">
-        {links.map((link) => (
-          <li key={link._id} className="flex flex-wrap items-center gap-sm px-md py-sm">
-            <div className="min-w-0 flex-1">
-              <Link
-                to={`/app/links/${link._id}`}
-                className="rounded-sm text-label-lg text-content-primary hover:text-primary-600"
-              >
-                <span className="line-clamp-1 break-all">{link.title}</span>
-              </Link>
+        <div className="divide-y divide-border-subtle">
+          {links.map((link) => (
+            <LinkRow
+              key={link._id}
+              link={link}
+              onShowQr={() => setQrFor(link)}
+              onDelete={() => deleteLink(link._id)}
+            />
+          ))}
+        </div>
+      </Card>
 
-              <p className="mt-3xs flex flex-wrap items-center gap-xs">
-                <span className="font-mono text-mono-code text-primary-600">
-                  {shortLinkHost}/{link.shortCode}
-                </span>
-                <a
-                  href={link.originalUrl}
-                  target="_blank"
-                  // The destination is user-supplied, so the opened page must
-                  // not receive a handle on this one.
-                  rel="noopener noreferrer"
-                  className="flex min-w-0 items-center gap-3xs rounded-sm text-body-sm text-content-tertiary hover:text-content-primary"
-                >
-                  <span className="line-clamp-1 break-all">{link.originalUrl}</span>
-                  <ExternalLink className="h-3 w-3 shrink-0" aria-hidden />
-                </a>
-              </p>
-            </div>
-
-            <div className="flex items-center gap-xs">
-              {link.status === 'inactive' ? (
-                <Badge tone="warning">Scheduled</Badge>
-              ) : (
-                <Badge tone="success">Active</Badge>
-              )}
-              {/*
-                visibility is independent of status, so it is a separate badge
-                and never a column value (PROJECT_MASTER.md section 4).
-              */}
-              {link.visibility === 'private' && (
-                <Badge tone="accent" icon={<Lock className="h-3 w-3" aria-hidden />}>
-                  Protected
-                </Badge>
-              )}
-            </div>
-
-            <p className="w-20 text-right text-body-md text-content-secondary">
-              {formatCount(link.clickCount)}
-              <span className="sr-only"> visits</span>
-            </p>
-          </li>
-        ))}
-      </ul>
-    </Card>
+      <QrModal link={qrFor} onOpenChange={(open) => !open && setQrFor(null)} />
+    </>
   );
 }
