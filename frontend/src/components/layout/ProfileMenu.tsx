@@ -1,7 +1,6 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { ChevronDown, LogOut, Shield, UserRound } from 'lucide-react';
-import { toast } from 'sonner';
 
 import { logout as logoutRequest } from '@/api/auth';
 import { DropdownMenu, MenuSeparator, menuItemClass } from '@/components/ui/DropdownMenu';
@@ -24,7 +23,6 @@ const initialsOf = (fullName: string) =>
  */
 export function ProfileMenu({ user }: { user: User }) {
   const { clear } = useAuth();
-  const navigate = useNavigate();
   const [signingOut, setSigningOut] = useState(false);
 
   const handleSignOut = async () => {
@@ -36,11 +34,16 @@ export function ProfileMenu({ user }: { user: User }) {
       // is what decides whether the app looks signed in, so a failed call must
       // not strand the user inside the shell.
     }
-    // Clearing every cached query matters on a shared machine: a stale ['urls']
-    // entry would otherwise be readable by whoever signs in next.
+    /*
+     * A full document replace, for the same reason the password change uses
+     * one: the session is over, and discarding the JS context clears every
+     * cached query by construction. On a shared machine that matters — a stale
+     * ['urls'] entry would otherwise be readable by whoever signs in next — and
+     * it avoids racing the route guards, which can otherwise bounce between
+     * /login and the dashboard while the auth state settles.
+     */
     clear();
-    navigate('/login', { replace: true });
-    toast.success('Signed out');
+    window.location.replace('/login');
   };
 
   return (
