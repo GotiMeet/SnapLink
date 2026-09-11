@@ -31,6 +31,7 @@ import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Skeleton } from '@/components/ui/Skeleton';
+import { TabPanel, Tabs } from '@/components/ui/Tabs';
 import { env } from '@/env';
 import { useBreadcrumbTitle } from '@/hooks/useBreadcrumbTitle';
 import { useLinkAnalytics } from '@/hooks/useAnalytics';
@@ -106,63 +107,31 @@ export function LinkAnalyticsPage() {
 
       <DateRangePicker range={range} onChange={setRange} />
 
-      <div
-        role="tablist"
-        aria-label="Analytics sections"
-        className="flex gap-2xs border-b border-border-subtle"
-      >
-        <TabButton
-          active={tab === 'overview'}
-          onClick={() => setParams({}, { replace: true })}
-        >
-          Overview &amp; timeline
-        </TabButton>
-        <TabButton
-          active={tab === 'breakdowns'}
-          onClick={() => setParams({ tab: 'breakdowns' }, { replace: true })}
-        >
-          Breakdowns
-        </TabButton>
-      </div>
-
-      <AnalyticsBody
-        link={link}
-        tab={tab}
-        range={range}
-        report={analyticsQuery.data}
-        loading={analyticsQuery.isPending}
-        refreshing={analyticsQuery.isFetching && !analyticsQuery.isPending}
-        error={analyticsQuery.error}
-        onResetRange={() => setRange(presetRange(DEFAULT_RANGE_DAYS))}
+      <Tabs<Tab>
+        label="Analytics sections"
+        active={tab}
+        onChange={(next) =>
+          setParams(next === 'breakdowns' ? { tab: 'breakdowns' } : {}, { replace: true })
+        }
+        tabs={[
+          { id: 'overview', label: 'Overview & timeline' },
+          { id: 'breakdowns', label: 'Breakdowns' },
+        ]}
       />
-    </div>
-  );
-}
 
-function TabButton({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      role="tab"
-      aria-selected={active}
-      onClick={onClick}
-      className={cn(
-        '-mb-px border-b-2 px-sm py-xs text-body-md transition-colors',
-        active
-          ? 'border-primary-600 font-semibold text-primary-600'
-          : 'border-transparent text-content-secondary hover:text-content-primary'
-      )}
-    >
-      {children}
-    </button>
+      <TabPanel id={tab}>
+        <AnalyticsBody
+          link={link}
+          tab={tab}
+          range={range}
+          report={analyticsQuery.data}
+          loading={analyticsQuery.isPending}
+          refreshing={analyticsQuery.isFetching && !analyticsQuery.isPending}
+          error={analyticsQuery.error}
+          onResetRange={() => setRange(presetRange(DEFAULT_RANGE_DAYS))}
+        />
+      </TabPanel>
+    </div>
   );
 }
 
