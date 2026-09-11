@@ -1,14 +1,15 @@
 import { Link, useLocation } from 'react-router-dom';
 import { ChevronRight } from 'lucide-react';
 
+import { Skeleton } from '@/components/ui/Skeleton';
+
 /**
  * Trail for the main stage, derived from the pathname.
  *
- * Only segments with a known label appear. A dynamic segment — a project or
- * link id — has no entry here, so the trail ends at its section and the page's
- * own h1 carries the entity name. Resolving an id to a title needs the fetch
- * that only the detail page makes, and there is no detail page yet; the crumb
- * gains a title when a screen exists to supply one.
+ * A dynamic segment — a project or link id — has no label here, because only
+ * the page that fetched it knows the title behind it. That page supplies one
+ * through BreadcrumbTitleContext; until it does, the crumb is a skeleton rather
+ * than a raw Mongo id.
  */
 const LABELS: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -23,7 +24,7 @@ const LABELS: Record<string, string> = {
 
 const ROOT = { to: '/app/dashboard', label: 'Dashboard' };
 
-export function Breadcrumbs() {
+export function Breadcrumbs({ detailTitle }: { detailTitle: string | null }) {
   const { pathname } = useLocation();
 
   // Drop the leading "app"; every crumb below is relative to it.
@@ -31,17 +32,21 @@ export function Breadcrumbs() {
 
   const crumbs: Array<{ to: string; label: string }> = [];
   let path = '/app';
+  let hasDynamicSegment = false;
 
   for (const segment of segments) {
     path += `/${segment}`;
     const label = LABELS[segment];
-    // An unlabelled segment is an id. Stop rather than print it.
-    if (!label) break;
+    if (!label) {
+      // An unlabelled segment is an id. The page names it, if it can.
+      hasDynamicSegment = true;
+      break;
+    }
     crumbs.push({ to: path, label });
   }
 
-  // Dashboard is the root crumb, so on the dashboard itself the trail would be
-  // a single non-link. Nothing to navigate, so render nothing.
+  // On the dashboard the trail would be a single crumb pointing at the page
+  // already open. Nothing to navigate, so render nothing.
   if (crumbs.length === 0 || (crumbs.length === 1 && crumbs[0]?.to === ROOT.to)) {
     return null;
   }
@@ -52,7 +57,7 @@ export function Breadcrumbs() {
     <nav aria-label="Breadcrumb" className="mb-md">
       <ol className="flex flex-wrap items-center gap-2xs text-body-sm">
         {trail.map((crumb, index) => {
-          const isCurrent = index === trail.length - 1;
+          const isCurrent = index === trail.length - 1 && !hasDynamicSegment;
           return (
             <li key={crumb.to} className="flex items-center gap-2xs">
               {index > 0 && (
@@ -73,6 +78,22 @@ export function Breadcrumbs() {
             </li>
           );
         })}
+
+        {hasDynamicSegment && (
+          <li className="flex items-center gap-2xs">
+            <ChevronRight className="h-3 w-3 text-content-tertiary" aria-hidden />
+            {detailTitle ? (
+              <span
+                aria-current="page"
+                className="max-w-xs truncate text-content-primary"
+              >
+                {detailTitle}
+              </span>
+            ) : (
+              <Skeleton className="h-4 w-32" />
+            )}
+          </li>
+        )}
       </ol>
     </nav>
   );

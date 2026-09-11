@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 
 import { Breadcrumbs } from './Breadcrumbs';
+import { BreadcrumbTitleContext } from './breadcrumbContext';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { UnverifiedEmailBanner } from './UnverifiedEmailBanner';
@@ -26,6 +27,9 @@ const readCollapsed = (): boolean => {
  */
 export function AppShell() {
   const [collapsed, setCollapsed] = useState(readCollapsed);
+  // Set by whichever detail page is mounted, so the last crumb can carry an
+  // entity title the pathname alone cannot supply.
+  const [detailTitle, setDetailTitle] = useState<string | null>(null);
 
   const toggleSidebar = useCallback(() => {
     setCollapsed((value) => {
@@ -61,8 +65,10 @@ export function AppShell() {
         <main id="main-content" tabIndex={-1} className="min-w-0 flex-1">
           <UnverifiedEmailBanner />
           <div className="mx-auto max-w-7xl p-md lg:p-lg">
-            <Breadcrumbs />
-            <Outlet />
+            <Breadcrumbs detailTitle={detailTitle} />
+            <BreadcrumbTitleContext.Provider value={setDetailTitle}>
+              <Outlet />
+            </BreadcrumbTitleContext.Provider>
           </div>
         </main>
       </div>
