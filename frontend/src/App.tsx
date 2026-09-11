@@ -7,6 +7,13 @@ import { BareLayout } from '@/components/layout/BareLayout';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { NotFoundPage } from '@/pages/NotFound';
 import { Placeholder } from '@/pages/Placeholder';
+import { ForgotPasswordPage } from '@/pages/public/ForgotPassword';
+import { LinkUnavailablePage } from '@/pages/public/LinkUnavailable';
+import { LoginPage } from '@/pages/public/Login';
+import { ResetPasswordPage } from '@/pages/public/ResetPassword';
+import { SignupPage } from '@/pages/public/Signup';
+import { UnlockPage } from '@/pages/public/Unlock';
+import { VerifyEmailPage } from '@/pages/public/VerifyEmail';
 
 /**
  * Route table from PROJECT_MASTER.md section 8. Every screen code is reserved
@@ -36,25 +43,13 @@ export default function App() {
       {/* Auth and public gate: no chrome. */}
       <Route element={<BareLayout />}>
         <Route element={<PublicOnlyRoute />}>
-          <Route path="login" element={<Placeholder code="SCR-PUB-04" name="Login" />} />
-          <Route
-            path="signup"
-            element={<Placeholder code="SCR-PUB-05" name="Signup" />}
-          />
+          <Route path="login" element={<LoginPage />} />
+          <Route path="signup" element={<SignupPage />} />
         </Route>
 
-        <Route
-          path="verify-email"
-          element={<Placeholder code="SCR-PUB-06" name="Verify Email" />}
-        />
-        <Route
-          path="forgot-password"
-          element={<Placeholder code="SCR-PUB-07" name="Forgot Password" />}
-        />
-        <Route
-          path="reset-password"
-          element={<Placeholder code="SCR-PUB-08" name="Reset Password" />}
-        />
+        <Route path="verify-email" element={<VerifyEmailPage />} />
+        <Route path="forgot-password" element={<ForgotPasswordPage />} />
+        <Route path="reset-password" element={<ResetPasswordPage />} />
 
         {/*
           The backend redirects browsers here from {APP_URL}/:shortCode when a
@@ -62,14 +57,8 @@ export default function App() {
           Both paths are fixed by redirect.controller.js and cannot be renamed
           without a backend change.
         */}
-        <Route
-          path="unlock/:shortCode"
-          element={<Placeholder code="SCR-PUB-09" name="Password Gate" />}
-        />
-        <Route
-          path="link-unavailable"
-          element={<Placeholder code="SCR-PUB-11" name="Link Unavailable" />}
-        />
+        <Route path="unlock/:shortCode" element={<UnlockPage />} />
+        <Route path="link-unavailable" element={<LinkUnavailablePage />} />
       </Route>
 
       {/* Authenticated workspace. */}

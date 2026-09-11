@@ -6,6 +6,12 @@ export type AuthStatus = 'loading' | 'authenticated' | 'anonymous';
 export interface AuthContextValue {
   status: AuthStatus;
   user: User | null;
+  /**
+   * Seed the session from a login or Google response. Those endpoints already
+   * return the user, so priming the cache avoids an extra GET /auth/me and
+   * closes the window where a just-authenticated user is still 'anonymous'.
+   */
+  signIn: (user: User) => void;
   /** Re-read the session from the server, e.g. after login or profile update. */
   refresh: () => Promise<void>;
   /** Drop all cached data. Called on logout and after a password change. */

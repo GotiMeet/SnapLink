@@ -127,9 +127,17 @@ export default {
         shimmer: {
           '100%': { transform: 'translateX(100%)' },
         },
+        // Rejected-password feedback on the link gate. The global
+        // prefers-reduced-motion rule in index.css collapses it to nothing.
+        shake: {
+          '0%, 100%': { transform: 'translateX(0)' },
+          '20%, 60%': { transform: 'translateX(-4px)' },
+          '40%, 80%': { transform: 'translateX(4px)' },
+        },
       },
       animation: {
         shimmer: 'shimmer 1.6s infinite',
+        shake: 'shake 0.35s ease-in-out',
       },
     },
   },
