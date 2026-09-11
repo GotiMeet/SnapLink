@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import * as Dialog from '@radix-ui/react-dialog';
 import { Menu, Monitor, Moon, Sun, X } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { logout as logoutRequest } from '@/api/auth';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
 import { cn } from '@/lib/cn';
-import { Button } from '@/components/ui/Button';
 import { BrandMark } from './BrandMark';
+import { ProfileMenu } from './ProfileMenu';
 import { SidebarNav } from './Sidebar';
 
 const THEMES: Array<{ value: ThemeChoice; label: string; Icon: typeof Sun }> = [
@@ -18,6 +16,11 @@ const THEMES: Array<{ value: ThemeChoice; label: string; Icon: typeof Sun }> = [
   { value: 'system', label: 'System', Icon: Monitor },
 ];
 
+/**
+ * Three explicit choices rather than a cycling button. System is a real state,
+ * not the absence of one, and a two-way toggle cannot express it — a user who
+ * wants to follow the OS has no way back once they have picked either side.
+ */
 function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
@@ -50,36 +53,23 @@ function ThemeToggle() {
   );
 }
 
-const initialsOf = (fullName: string) =>
-  fullName
-    .split(' ')
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((part) => part[0]?.toUpperCase() ?? '')
-    .join('') || '?';
-
+/**
+ * 64px bar: brand, theme toggle, account menu.
+ *
+ * The quick-search pill and the "+ Create" dropdown described in section 8 are
+ * not here yet on purpose. Both open things that do not exist until later
+ * phases — the Create Project modal and the Create Link drawer — and quick
+ * search filters links and projects the app has no queries for yet. Section 14
+ * schedules them accordingly; a control that opens nothing is worse than its
+ * absence.
+ */
 export function TopBar() {
-  const { user, clear } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [drawerOpen, setDrawerOpen] = useState(false);
-
-  const handleLogout = async () => {
-    try {
-      await logoutRequest();
-    } catch {
-      // The cookie may already be gone. Clearing local state is what matters,
-      // so a failed call must not strand the user in a signed-in shell.
-    }
-    // Clear every cached query: a stale ['urls'] entry would otherwise be
-    // visible to the next person on a shared machine.
-    clear();
-    navigate('/login', { replace: true });
-    toast.success('Signed out');
-  };
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-md border-b border-border-subtle bg-surface-card px-md">
-      {/* Mobile navigation drawer, below the 1024px sidebar breakpoint. */}
+      {/* Off-canvas navigation, below the 1024px sidebar breakpoint. */}
       <Dialog.Root open={drawerOpen} onOpenChange={setDrawerOpen}>
         <Dialog.Trigger asChild>
           <button
@@ -92,7 +82,7 @@ export function TopBar() {
         </Dialog.Trigger>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 lg:hidden" />
-          <Dialog.Content className="fixed inset-y-0 left-0 z-50 w-64 border-r border-border-subtle bg-surface-card lg:hidden">
+          <Dialog.Content className="fixed inset-y-0 left-0 z-50 w-64 overflow-y-auto border-r border-border-subtle bg-surface-card lg:hidden">
             <Dialog.Title className="sr-only">Navigation</Dialog.Title>
             <div className="flex h-16 items-center justify-between px-sm">
               <BrandMark />
@@ -114,24 +104,7 @@ export function TopBar() {
 
       <div className="ml-auto flex items-center gap-sm">
         <ThemeToggle />
-
-        {user && (
-          <div className="flex items-center gap-xs">
-            <span
-              aria-hidden
-              className="flex h-9 w-9 items-center justify-center rounded-full bg-primary-600 text-label-lg text-white"
-            >
-              {initialsOf(user.fullName)}
-            </span>
-            <div className="hidden flex-col leading-tight sm:flex">
-              <span className="text-label-lg text-content-primary">{user.fullName}</span>
-              <span className="text-body-sm text-content-tertiary">{user.email}</span>
-            </div>
-            <Button variant="ghost" size="sm" onClick={handleLogout}>
-              Sign out
-            </Button>
-          </div>
-        )}
+        {user && <ProfileMenu user={user} />}
       </div>
     </header>
   );
