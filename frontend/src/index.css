@@ -1,0 +1,113 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Design tokens from PROJECT_MASTER.md section 7.
+ * Declared as space-separated RGB triplets so Tailwind's <alpha-value> works.
+ * Only surfaces, text, borders and the primary tints change between themes;
+ * the semantic roles (success / warning / danger / accent) are constant.
+ */
+@layer base {
+  :root {
+    --color-primary-50: 239 244 255;
+    --color-primary-100: 219 231 254;
+    --color-primary-500: 59 130 246;
+    --color-primary-600: 15 82 255;
+    --color-primary-700: 0 63 216;
+    --color-primary-800: 0 50 172;
+
+    --color-success: 0 195 137;
+    --color-warning: 245 158 11;
+    --color-danger: 239 68 68;
+    --color-accent: 99 102 241;
+
+    --surface-canvas: 248 250 252;
+    --surface-card: 255 255 255;
+    --surface-subtle: 241 245 249;
+
+    --border-subtle: 226 232 240;
+    --border-strong: 203 213 225;
+
+    --text-primary: 15 23 42;
+    --text-secondary: 71 85 105;
+    --text-tertiary: 148 163 184;
+
+    color-scheme: light;
+  }
+
+  .dark {
+    --color-primary-50: 23 38 82;
+    --color-primary-100: 30 50 105;
+    --color-primary-500: 59 130 246;
+    --color-primary-600: 15 82 255;
+    --color-primary-700: 45 104 255;
+    --color-primary-800: 75 127 255;
+
+    --surface-canvas: 10 13 20;
+    --surface-card: 18 23 34;
+    --surface-subtle: 25 32 48;
+
+    --border-subtle: 39 46 62;
+    --border-strong: 55 65 85;
+
+    --text-primary: 248 250 252;
+    --text-secondary: 148 163 184;
+    --text-tertiary: 100 116 139;
+
+    color-scheme: dark;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-surface-canvas font-body text-body-md text-content-primary antialiased;
+    transition:
+      background-color 0.2s ease,
+      border-color 0.2s ease;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    @apply font-heading text-content-primary;
+  }
+
+  /*
+   * Visible focus for keyboard users only. Required by the accessibility
+   * commitment in PROJECT_MASTER.md section 7; :focus-visible keeps mouse
+   * clicks from painting rings on every button.
+   */
+  :focus-visible {
+    @apply outline-none ring-2 ring-primary-600 ring-offset-2 ring-offset-surface-canvas;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  /* Accessible label that stays available to screen readers. */
+  .sr-only-focusable:not(:focus):not(:focus-within) {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border-width: 0;
+  }
+}

@@ -1,0 +1,128 @@
+import { Navigate, Route, Routes } from 'react-router-dom';
+
+import { ProtectedRoute } from '@/auth/ProtectedRoute';
+import { PublicOnlyRoute } from '@/auth/PublicOnlyRoute';
+import { AppShell } from '@/components/layout/AppShell';
+import { BareLayout } from '@/components/layout/BareLayout';
+import { PublicLayout } from '@/components/layout/PublicLayout';
+import { NotFoundPage } from '@/pages/NotFound';
+import { Placeholder } from '@/pages/Placeholder';
+
+/**
+ * Route table from PROJECT_MASTER.md section 8. Every screen code is reserved
+ * here in Phase 0 so later phases only swap a Placeholder for its real screen.
+ *
+ * Modals and drawers (Create Project, Create Link, QR Viewer, Restore Conflict)
+ * are deliberately absent: they are components mounted by their parent page,
+ * not routes. None needs to be linkable or independently reloadable.
+ */
+export default function App() {
+  return (
+    <Routes>
+      {/* Marketing pages: header + footer chrome. */}
+      <Route element={<PublicLayout />}>
+        <Route index element={<Placeholder code="SCR-PUB-01" name="Home" />} />
+        <Route
+          path="features"
+          element={<Placeholder code="SCR-PUB-10" name="Features" />}
+        />
+        <Route path="about" element={<Placeholder code="SCR-PUB-02" name="About" />} />
+        <Route
+          path="contact"
+          element={<Placeholder code="SCR-PUB-03" name="Contact" />}
+        />
+      </Route>
+
+      {/* Auth and public gate: no chrome. */}
+      <Route element={<BareLayout />}>
+        <Route element={<PublicOnlyRoute />}>
+          <Route path="login" element={<Placeholder code="SCR-PUB-04" name="Login" />} />
+          <Route
+            path="signup"
+            element={<Placeholder code="SCR-PUB-05" name="Signup" />}
+          />
+        </Route>
+
+        <Route
+          path="verify-email"
+          element={<Placeholder code="SCR-PUB-06" name="Verify Email" />}
+        />
+        <Route
+          path="forgot-password"
+          element={<Placeholder code="SCR-PUB-07" name="Forgot Password" />}
+        />
+        <Route
+          path="reset-password"
+          element={<Placeholder code="SCR-PUB-08" name="Reset Password" />}
+        />
+
+        {/*
+          The backend redirects browsers here from {APP_URL}/:shortCode when a
+          link is private, and to /link-unavailable when a code does not resolve.
+          Both paths are fixed by redirect.controller.js and cannot be renamed
+          without a backend change.
+        */}
+        <Route
+          path="unlock/:shortCode"
+          element={<Placeholder code="SCR-PUB-09" name="Password Gate" />}
+        />
+        <Route
+          path="link-unavailable"
+          element={<Placeholder code="SCR-PUB-11" name="Link Unavailable" />}
+        />
+      </Route>
+
+      {/* Authenticated workspace. */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="app" element={<AppShell />}>
+          <Route index element={<Navigate to="/app/dashboard" replace />} />
+          <Route
+            path="dashboard"
+            element={<Placeholder code="SCR-AUTH-01" name="Dashboard" />}
+          />
+          <Route
+            path="projects"
+            element={<Placeholder code="SCR-AUTH-02" name="Projects Catalog" />}
+          />
+          <Route
+            path="projects/:projectId"
+            element={<Placeholder code="SCR-AUTH-03" name="Project Details" />}
+          />
+          <Route
+            path="links"
+            element={<Placeholder code="SCR-AUTH-05" name="All Links" />}
+          />
+          <Route
+            path="links/:urlId"
+            element={<Placeholder code="SCR-AUTH-07" name="Link Details & Edit" />}
+          />
+          <Route
+            path="links/:urlId/analytics"
+            element={<Placeholder code="SCR-AUTH-09B" name="Link Analytics" />}
+          />
+          <Route
+            path="analytics"
+            element={<Placeholder code="SCR-AUTH-09A" name="Analytics Overview" />}
+          />
+          <Route
+            path="recycle-bin"
+            element={<Placeholder code="SCR-AUTH-10A" name="Recycle Bin" />}
+          />
+          <Route path="settings">
+            <Route index element={<Navigate to="/app/settings/profile" replace />} />
+            <Route
+              path="profile"
+              element={<Placeholder code="SCR-AUTH-12" name="Profile Settings" />}
+            />
+            <Route
+              path="security"
+              element={<Placeholder code="SCR-AUTH-13" name="Security Settings" />}
+            />
+          </Route>
+        </Route>
+      </Route>
+
+      <Route path="*" element={<NotFoundPage />} />
+    </Routes>
+  );
+}
