@@ -7,6 +7,8 @@ import { BareLayout } from '@/components/layout/BareLayout';
 import { PublicLayout } from '@/components/layout/PublicLayout';
 import { NotFoundPage } from '@/pages/NotFound';
 import { Placeholder } from '@/pages/Placeholder';
+import { ProjectDetailPage } from '@/pages/app/ProjectDetail';
+import { ProjectsPage } from '@/pages/app/Projects';
 import { ForgotPasswordPage } from '@/pages/public/ForgotPassword';
 import { LinkUnavailablePage } from '@/pages/public/LinkUnavailable';
 import { LoginPage } from '@/pages/public/Login';
@@ -69,14 +71,8 @@ export default function App() {
             path="dashboard"
             element={<Placeholder code="SCR-AUTH-01" name="Dashboard" />}
           />
-          <Route
-            path="projects"
-            element={<Placeholder code="SCR-AUTH-02" name="Projects Catalog" />}
-          />
-          <Route
-            path="projects/:projectId"
-            element={<Placeholder code="SCR-AUTH-03" name="Project Details" />}
-          />
+          <Route path="projects" element={<ProjectsPage />} />
+          <Route path="projects/:projectId" element={<ProjectDetailPage />} />
           <Route
             path="links"
             element={<Placeholder code="SCR-AUTH-05" name="All Links" />}
