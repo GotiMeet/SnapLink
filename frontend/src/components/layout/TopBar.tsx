@@ -65,7 +65,7 @@ export function TopBar() {
         </Dialog.Trigger>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 lg:hidden" />
-          <Dialog.Content className="fixed inset-y-0 left-0 z-50 w-64 overflow-y-auto border-r border-border-subtle bg-surface-card lg:hidden">
+          <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-y-auto border-r border-border-subtle bg-surface-card lg:hidden">
             <Dialog.Title className="sr-only">Navigation</Dialog.Title>
             <div className="flex h-16 items-center justify-between px-sm">
               <BrandMark />
@@ -77,6 +77,20 @@ export function TopBar() {
               </Dialog.Close>
             </div>
             <SidebarNav onNavigate={() => setDrawerOpen(false)} />
+
+            {/*
+              The bar has no room for a three-state control on a phone once
+              search, create and the account menu are present, which left theme
+              three levels deep in Settings — the one place it is least likely
+              to be looked for and most likely to be wanted. The drawer has the
+              room and is one tap from any screen.
+            */}
+            <div className="mt-auto border-t border-border-subtle p-sm sm:hidden">
+              <p className="mb-xs text-label-md uppercase tracking-wide text-content-tertiary">
+                Theme
+              </p>
+              <ThemeToggle />
+            </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

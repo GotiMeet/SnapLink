@@ -17,6 +17,13 @@ import type { ShortUrl } from '@/types/models';
 import { usePageMeta } from '@/hooks/usePageMeta';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
+/**
+ * The catalogue was the only one of the three list screens that could not be
+ * reordered — Projects has a sort control and Analytics Overview has three —
+ * so users reached for the analytics leaderboard to manage links, which is not
+ * what it is for. 'recent' is the order the API already returns.
+ */
+type SortKey = 'recent' | 'visits' | 'created' | 'title';
 
 /**
  * `w-full` and `min-w-0` are both load-bearing.
@@ -42,6 +49,7 @@ export function LinksPage() {
   const [search, setSearch] = useState('');
   const [projectFilter, setProjectFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [sort, setSort] = useState<SortKey>('recent');
   const [creating, setCreating] = useState(false);
   const [qrFor, setQrFor] = useState<ShortUrl | null>(null);
 
@@ -57,7 +65,7 @@ export function LinksPage() {
   const visible = useMemo(() => {
     const term = search.trim().toLowerCase();
 
-    return (urlsQuery.data ?? []).filter((link) => {
+    const filtered = (urlsQuery.data ?? []).filter((link) => {
       if (projectFilter !== 'all' && link.project !== projectFilter) return false;
       if (statusFilter !== 'all' && link.status !== statusFilter) return false;
       if (!term) return true;
@@ -66,7 +74,17 @@ export function LinksPage() {
         link.shortCode.toLowerCase().includes(term)
       );
     });
-  }, [urlsQuery.data, search, projectFilter, statusFilter]);
+
+    // Copy before sorting: the query cache's array is not ours to reorder.
+    const rows = [...filtered];
+    if (sort === 'visits') rows.sort((a, b) => b.clickCount - a.clickCount);
+    else if (sort === 'created') {
+      rows.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    } else if (sort === 'title') {
+      rows.sort((a, b) => a.title.localeCompare(b.title));
+    }
+    return rows;
+  }, [urlsQuery.data, search, projectFilter, statusFilter, sort]);
 
   const total = urlsQuery.data?.length ?? 0;
   /*
@@ -164,7 +182,7 @@ export function LinksPage() {
             widths the layout decides, instead of widths their own content
             decides. See `selectClass` for what that was costing.
           */}
-          <div className="grid items-end gap-sm sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_minmax(0,10rem)] lg:gap-md">
+          <div className="grid items-end gap-sm sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,12rem)_minmax(0,9rem)_minmax(0,11rem)] lg:gap-md">
             <div className="min-w-0">
               <Input
                 label="Search links"
@@ -203,19 +221,36 @@ export function LinksPage() {
                 <option value="inactive">Scheduled</option>
               </select>
             </label>
+
+            <label className="flex min-w-0 flex-col gap-2xs">
+              <span className="text-label-lg text-content-primary">Sort by</span>
+              <select
+                value={sort}
+                onChange={(event) => setSort(event.target.value as SortKey)}
+                className={selectClass}
+              >
+                <option value="recent">Recently updated</option>
+                <option value="visits">Most visits</option>
+                <option value="created">Newest created</option>
+                <option value="title">Alphabetical</option>
+              </select>
+            </label>
           </div>
 
           {visible.length === 0 ? (
-            <EmptyState
-              icon={<SearchX className="h-8 w-8" aria-hidden />}
-              title="No matching links found"
-              description="Try a different search term, or clear the filters to see everything."
-              action={
-                <Button variant="secondary" onClick={resetFilters}>
-                  Reset filters
-                </Button>
-              }
-            />
+            /* Carded: this replaces the list, not the page. */
+            <Card className="p-lg">
+              <EmptyState
+                icon={<SearchX className="h-8 w-8" aria-hidden />}
+                title="No matching links found"
+                description="Try a different search term, or clear the filters to see everything."
+                action={
+                  <Button variant="secondary" onClick={resetFilters}>
+                    Reset filters
+                  </Button>
+                }
+              />
+            </Card>
           ) : (
             <>
               {/* A screen reader cannot see the list shrink as filters change. */}
@@ -224,6 +259,24 @@ export function LinksPage() {
               </p>
 
               <Card className="divide-y divide-border-subtle">
+                {/*
+                  Names the two columns that carried none. The relative time in
+                  particular was read as last visit — a different and more
+                  interesting number — when it is when the link was last edited.
+                  Hidden below md, where the rows are stacked cards and the
+                  figures are labelled inline.
+                */}
+                <div
+                  aria-hidden
+                  className="hidden items-center gap-md px-md py-xs text-label-md uppercase tracking-wide text-content-tertiary md:flex"
+                >
+                  <span className="min-w-0 flex-1">Link</span>
+                  <span className="w-56 shrink-0">Status</span>
+                  <span className="w-20 shrink-0 text-right">Visits</span>
+                  <span className="hidden w-28 shrink-0 text-right lg:block">Updated</span>
+                  <span className="w-[7.5rem] shrink-0" />
+                </div>
+
                 {visible.map((link) => (
                   <LinkRow
                     key={link._id}

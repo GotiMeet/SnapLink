@@ -4,7 +4,13 @@ import { BarChart3, FolderKanban, Link2, Lock, QrCode, ShieldCheck } from 'lucid
 import { FeatureCard, MarketingSection, SignupCta } from '@/components/public/Marketing';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
+import { env } from '@/env';
 import { usePageMeta } from '@/hooks/usePageMeta';
+
+/* Built from the deployment's own origin: the example used to hardcode a
+   domain this project does not own, setting an expectation the product could
+   not meet. */
+const shortLinkHost = env.appUrl.replace(/^https?:\/\//, '');
 
 /** SCR-PUB-01. */
 export function HomePage() {
@@ -96,7 +102,7 @@ function LinkPreviewIllustration() {
 
       <div className="mt-sm flex flex-wrap items-center gap-xs">
         <span className="font-mono text-heading-md text-primary-text">
-          snap.lk/spring-launch
+          {shortLinkHost}/spring-launch
         </span>
         <Badge tone="success">Active</Badge>
         <Badge tone="accent" icon={<Lock className="h-3 w-3" />}>

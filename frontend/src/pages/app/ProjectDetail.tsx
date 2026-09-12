@@ -115,9 +115,13 @@ export function ProjectDetailPage() {
               <Plus className="h-4 w-4" aria-hidden />
               Create link in this project
             </Button>
+            {/*
+              Same size as the primary beside it. A 32px ghost next to a 40px
+              primary in one flex row left the two on different baselines and
+              made the smaller read as an afterthought.
+            */}
             <Button
               variant="ghost"
-              size="sm"
               className="text-danger-text hover:bg-danger/10 hover:text-danger-text"
               onClick={() => setDeleting(project)}
             >

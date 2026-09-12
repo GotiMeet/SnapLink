@@ -128,11 +128,15 @@ export function ContactPage() {
 
       {!hasChannel && (
         <MarketingSection id="channels" title="Direct channels">
-          <Alert tone="info" title="No support channel is configured">
+          {/*
+            Addressed to a visitor, not to whoever deployed the app. This used
+            to name VITE_SUPPORT_EMAIL and VITE_REPO_URL on a public marketing
+            page — internal configuration shown to the wrong audience.
+          */}
+          <Alert tone="info" title="No contact channel is listed yet">
             <p>
-              This deployment has not set a support email or repository link. Whoever runs
-              it can add them with the <code>VITE_SUPPORT_EMAIL</code> and{' '}
-              <code>VITE_REPO_URL</code> environment variables.
+              This SnapLink deployment has not published a support address. If you reached
+              it through someone else, they are the best people to ask.
             </p>
           </Alert>
         </MarketingSection>

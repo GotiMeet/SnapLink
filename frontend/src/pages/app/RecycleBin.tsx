@@ -582,9 +582,12 @@ function RestoreRow({
         {deletedAt ? `Deleted ${formatRelative(deletedAt)}` : 'Deleted'}
       </p>
 
+      {/*
+        Default size, not `sm`. Restore is the only action this screen offers,
+        and it was rendered as the quietest control on the page.
+      */}
       <Button
         variant="secondary"
-        size="sm"
         loading={restoring}
         onClick={onRestore}
         aria-label={`Restore ${title}`}
