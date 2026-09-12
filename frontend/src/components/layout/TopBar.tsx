@@ -72,7 +72,7 @@ export function TopBar() {
           <button
             type="button"
             aria-label="Open navigation menu"
-            className="rounded-md p-2xs text-content-secondary hover:bg-surface-subtle lg:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-content-secondary hover:bg-surface-subtle lg:hidden"
           >
             <Menu className="h-5 w-5" aria-hidden />
           </button>

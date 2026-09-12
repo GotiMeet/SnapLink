@@ -124,7 +124,8 @@ function ProfileCard({ user }: { user: User }) {
         </div>
       </div>
 
-      <form className="mt-lg flex flex-col gap-md" onSubmit={submit} noValidate>
+      {/* Capped so a name field is not ten times wider than any name. */}
+      <form className="mt-lg flex max-w-xl flex-col gap-md" onSubmit={submit} noValidate>
         {apiError && !apiError.isValidation && (
           <Alert tone="danger">{apiError.message}</Alert>
         )}

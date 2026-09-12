@@ -13,17 +13,40 @@ const NAV = [
 export function PublicLayout() {
   return (
     <div className="flex min-h-screen flex-col bg-surface-canvas">
+      {/*
+        Two rows below `sm`, one above.
+
+        The single-row version needs 418px of horizontal space before anything
+        wraps — the wordmark, three nav links and a sign-in button do not fit on
+        any common phone, so "Sign in" used to clip against the viewport edge
+        with the container's own padding collapsed to nothing. Below `sm` the
+        nav drops to its own centred row instead of a drawer: three links do not
+        justify an overlay, and keeping them visible is what made them reachable
+        on a phone in the first place.
+      */}
       <header className="border-b border-border-subtle bg-surface-card">
-        <div className="mx-auto flex h-16 max-w-6xl items-center gap-md px-md sm:gap-lg">
-          <Link to="/" className="rounded-md">
-            <BrandMark />
-          </Link>
-          {/*
-            Visible at every width. Hiding these on mobile with no drawer left
-            the marketing pages unreachable from the header on a phone; the
-            secondary CTA yields instead, since the Home hero carries one.
-          */}
-          <nav aria-label="Main" className="flex gap-sm sm:gap-md">
+        <div className="mx-auto flex max-w-6xl flex-col px-md sm:h-16 sm:flex-row sm:items-center sm:gap-lg">
+          <div className="flex h-16 shrink-0 items-center justify-between gap-md sm:h-auto">
+            <Link to="/" className="rounded-md">
+              <BrandMark />
+            </Link>
+
+            <div className="flex items-center gap-xs sm:hidden">
+              <Link to="/login">
+                <Button variant="ghost" size="sm">
+                  Sign in
+                </Button>
+              </Link>
+              <Link to="/signup">
+                <Button size="sm">Get started</Button>
+              </Link>
+            </div>
+          </div>
+
+          <nav
+            aria-label="Main"
+            className="flex gap-md border-t border-border-subtle py-xs sm:border-t-0 sm:py-0"
+          >
             {NAV.map(({ to, label }) => (
               <Link
                 key={to}
@@ -34,13 +57,14 @@ export function PublicLayout() {
               </Link>
             ))}
           </nav>
-          <div className="ml-auto flex items-center gap-xs">
+
+          <div className="ml-auto hidden items-center gap-xs sm:flex">
             <Link to="/login">
               <Button variant="ghost" size="sm">
                 Sign in
               </Button>
             </Link>
-            <Link to="/signup" className="hidden sm:block">
+            <Link to="/signup">
               <Button size="sm">Get started free</Button>
             </Link>
           </div>

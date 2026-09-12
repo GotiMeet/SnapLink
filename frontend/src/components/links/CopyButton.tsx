@@ -39,7 +39,9 @@ export function CopyButton({
       aria-label={copied ? `${label} copied` : `Copy ${label}`}
       title={copied ? 'Copied' : `Copy ${label}`}
       className={cn(
-        'rounded-md p-2xs transition-colors',
+        // 36px on touch. At the previous 24px this sat inside the same cluster
+        // as the row's other controls and was the smallest target in the app.
+        'flex h-9 w-9 shrink-0 items-center justify-center rounded-md transition-colors md:h-8 md:w-8',
         copied
           ? 'text-success-text'
           : 'text-content-tertiary hover:bg-surface-subtle hover:text-content-primary',

@@ -1,7 +1,7 @@
 import { Clock, Lock } from 'lucide-react';
 
 import { Badge } from '@/components/ui/Badge';
-import { formatDate } from '@/lib/format';
+import { formatDate, formatDateShort } from '@/lib/format';
 import type { ShortUrl } from '@/types/models';
 
 /**
@@ -16,8 +16,18 @@ import type { ShortUrl } from '@/types/models';
 export function LinkStatusBadge({ link }: { link: ShortUrl }) {
   if (link.status === 'inactive') {
     return (
-      <Badge tone="warning" icon={<Clock className="h-3 w-3" aria-hidden />}>
-        {link.scheduledLiveAt ? `Live ${formatDate(link.scheduledLiveAt)}` : 'Scheduled'}
+      <Badge
+        tone="warning"
+        icon={<Clock className="h-3 w-3" aria-hidden />}
+        title={
+          link.scheduledLiveAt
+            ? `Goes live ${formatDate(link.scheduledLiveAt)}`
+            : undefined
+        }
+      >
+        {link.scheduledLiveAt
+          ? `Live ${formatDateShort(link.scheduledLiveAt)}`
+          : 'Scheduled'}
       </Badge>
     );
   }

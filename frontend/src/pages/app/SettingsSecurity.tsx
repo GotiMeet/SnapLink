@@ -198,7 +198,7 @@ function SetPasswordForm({ onAlreadySet }: { onAlreadySet: () => void }) {
   const apiError = mutation.error instanceof ApiError ? mutation.error : null;
 
   return (
-    <form className="flex flex-col gap-md" onSubmit={submit} noValidate>
+    <form className="flex max-w-xl flex-col gap-md" onSubmit={submit} noValidate>
       {apiError && !apiError.isValidation && !apiError.isConflict && (
         <Alert tone="danger">{apiError.message}</Alert>
       )}
@@ -307,7 +307,7 @@ function ChangePasswordForm({ onNotSet }: { onNotSet: () => void }) {
 
   return (
     <>
-      <form className="flex flex-col gap-md" onSubmit={submit} noValidate>
+      <form className="flex max-w-xl flex-col gap-md" onSubmit={submit} noValidate>
         {wrongCurrent && <Alert tone="danger">Current password is incorrect.</Alert>}
         {apiError && !wrongCurrent && !apiError.isValidation && !apiError.isConflict && (
           <Alert tone="danger">{apiError.message}</Alert>

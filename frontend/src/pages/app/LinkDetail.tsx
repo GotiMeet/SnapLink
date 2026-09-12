@@ -296,7 +296,13 @@ function LinkDetail({ link }: { link: ShortUrl }) {
       <Card className="p-lg">
         <h2 className="text-heading-md">Configuration</h2>
 
-        <form className="mt-lg flex flex-col gap-lg" onSubmit={submit} noValidate>
+        {/*
+          Capped rather than filling the card. At full width a single-line title
+          field ran about 1,000px on a 1280px screen, putting its label and its
+          text entry point most of a screen apart, and stretching the two
+          visibility tiles to 480px each for two short lines of text.
+        */}
+        <form className="mt-lg flex max-w-2xl flex-col gap-lg" onSubmit={submit} noValidate>
           {apiError && !apiError.isValidation && (
             <Alert tone="danger">{apiError.message}</Alert>
           )}

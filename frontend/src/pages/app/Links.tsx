@@ -18,8 +18,17 @@ import { usePageMeta } from '@/hooks/usePageMeta';
 
 type StatusFilter = 'all' | 'active' | 'inactive';
 
+/**
+ * `w-full` and `min-w-0` are both load-bearing.
+ *
+ * A native select's intrinsic width is set by its longest option, and it does
+ * not shrink below that by default. With a project titled "Client — Nordwind
+ * Studios" the select claimed most of the filter row and squeezed the flex-1
+ * search field down to a few pixels, overlapping its own label. Pinning the
+ * select to its wrapper's width instead moves the sizing decision to the grid.
+ */
 const selectClass =
-  'h-10 rounded-md border border-border-subtle bg-surface-card px-sm text-body-md text-content-primary focus:outline-none focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-primary-600/20';
+  'h-10 w-full min-w-0 rounded-md border border-border-subtle bg-surface-card px-sm text-body-md text-content-primary focus:outline-none focus-visible:border-primary-600 focus-visible:ring-2 focus-visible:ring-primary-600/20';
 
 /** SCR-AUTH-05. */
 export function LinksPage() {
@@ -135,8 +144,13 @@ export function LinksPage() {
 
       {urlsQuery.isSuccess && total > 0 && (
         <>
-          <div className="flex flex-wrap items-end gap-md">
-            <div className="min-w-0 flex-1 sm:max-w-sm">
+          {/*
+            A grid rather than a wrapping flex row: the three controls then have
+            widths the layout decides, instead of widths their own content
+            decides. See `selectClass` for what that was costing.
+          */}
+          <div className="grid items-end gap-sm sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_minmax(0,14rem)_minmax(0,10rem)] lg:gap-md">
+            <div className="min-w-0">
               <Input
                 label="Search links"
                 type="search"
@@ -146,7 +160,7 @@ export function LinksPage() {
               />
             </div>
 
-            <label className="flex flex-col gap-2xs">
+            <label className="flex min-w-0 flex-col gap-2xs">
               <span className="text-label-lg text-content-primary">Project</span>
               <select
                 value={projectFilter}
@@ -162,7 +176,7 @@ export function LinksPage() {
               </select>
             </label>
 
-            <label className="flex flex-col gap-2xs">
+            <label className="flex min-w-0 flex-col gap-2xs">
               <span className="text-label-lg text-content-primary">Status</span>
               <select
                 value={statusFilter}

@@ -19,6 +19,17 @@ export const formatDate = (iso: string): string =>
   });
 
 /**
+ * `12 Sep`, for places where the year costs more room than it earns.
+ *
+ * The scheduled badge is the case: with the year it measured 138px, which
+ * pushed the Protected badge beside it onto a second line and left the badge
+ * column of a scheduled row sitting higher than every other row's. The full
+ * date stays available as the badge's title.
+ */
+export const formatDateShort = (iso: string): string =>
+  new Date(iso).toLocaleDateString(undefined, { day: 'numeric', month: 'short' });
+
+/**
  * `just now`, `5 minutes ago`, `3 days ago`, then an absolute date.
  *
  * Switching to a date past a week keeps the phrasing honest: "47 days ago" is
