@@ -36,6 +36,15 @@ const NO_REFRESH_PATHS = new Set([
   '/auth/resend-verification-email',
   '/auth/forgot-password',
   '/auth/reset-password',
+  /*
+   * Both answer 401 for a wrong *current* password, not for an expired access
+   * token. Without them here a mistyped password rotated the refresh token and
+   * then replayed the identical request, so every typo cost two credential
+   * attempts against the server's counters and one rotation through a path
+   * that has reuse detection on it.
+   */
+  '/auth/change-password',
+  '/auth/set-password',
 ]);
 
 export class ApiError extends Error {

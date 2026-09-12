@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
@@ -56,6 +56,8 @@ export function RecycleBinPage() {
   const [conflict, setConflict] = useState<ConflictState | null>(null);
   /** Row id to failure message, for refusals that are not the project conflict. */
   const [rowErrors, setRowErrors] = useState<Record<string, string>>({});
+  /** Row id to whether that failure is one renaming the active project can fix. */
+  const [rowRemedies, setRowRemedies] = useState<Record<string, boolean>>({});
   const [restoringId, setRestoringId] = useState<string | null>(null);
 
   const queryClient = useQueryClient();
@@ -77,13 +79,31 @@ export function RecycleBinPage() {
     return titles;
   }, [activeProjectsQuery.data, deletedProjectsQuery.data]);
 
-  const clearRowError = (id: string) =>
+  const clearRowError = (id: string) => {
     setRowErrors((current) => {
       if (!(id in current)) return current;
       const next = { ...current };
       delete next[id];
       return next;
     });
+    setRowRemedies((current) => {
+      if (!(id in current)) return current;
+      const next = { ...current };
+      delete next[id];
+      return next;
+    });
+  };
+
+  /**
+   * A failure belongs to the attempt that produced it. Errors used to be
+   * cleared only when the same row was retried, so switching tabs or changing
+   * the search left messages attached to rows the user had since scrolled past
+   * and come back to, with no way to tell whether they were still live.
+   */
+  const clearAllRowErrors = useCallback(() => {
+    setRowErrors((current) => (Object.keys(current).length ? {} : current));
+    setRowRemedies((current) => (Object.keys(current).length ? {} : current));
+  }, []);
 
   /**
    * Restoring a link and restoring a project both move items between the live
@@ -156,6 +176,12 @@ export function RecycleBinPage() {
         return;
       }
       setRowErrors((current) => ({ ...current, [projectId]: error.message }));
+      /*
+       * Only a title conflict is fixed by renaming. The remedy used to be
+       * rendered beside every failure, so a 500 or a dropped connection sent
+       * the user off to rename a project, which could not have helped.
+       */
+      setRowRemedies((current) => ({ ...current, [projectId]: error.isConflict }));
     },
     onSettled: () => setRestoringId(null),
   });
@@ -195,7 +221,13 @@ export function RecycleBinPage() {
     projects.length === 0;
 
   const switchTab = (next: TabId) => {
+    clearAllRowErrors();
     setParams(next === 'projects' ? { tab: 'projects' } : {}, { replace: true });
+  };
+
+  const changeSearch = (next: string) => {
+    clearAllRowErrors();
+    setSearch(next);
   };
 
   return (
@@ -273,7 +305,7 @@ export function RecycleBinPage() {
               label="Search the Recycle Bin"
               type="search"
               value={search}
-              onChange={(event) => setSearch(event.target.value)}
+              onChange={(event) => changeSearch(event.target.value)}
               placeholder={tab === 'links' ? 'Title or short code' : 'Project title'}
             />
           </div>
@@ -292,7 +324,7 @@ export function RecycleBinPage() {
                 total={links.length}
                 deletedProjectCount={projects.length}
                 search={term}
-                onClearSearch={() => setSearch('')}
+                onClearSearch={() => changeSearch('')}
                 projectTitles={projectTitles}
                 rowErrors={rowErrors}
                 restoringId={restoringId}
@@ -303,8 +335,9 @@ export function RecycleBinPage() {
                 projects={visibleProjects}
                 total={projects.length}
                 search={term}
-                onClearSearch={() => setSearch('')}
+                onClearSearch={() => changeSearch('')}
                 rowErrors={rowErrors}
+                rowRemedies={rowRemedies}
                 restoringId={restoringId}
                 onRestore={(id) => restoreProjectMutation.mutate(id)}
               />
@@ -450,6 +483,7 @@ function DeletedProjects({
   search,
   onClearSearch,
   rowErrors,
+  rowRemedies,
   restoringId,
   onRestore,
 }: {
@@ -458,6 +492,8 @@ function DeletedProjects({
   search: string;
   onClearSearch: () => void;
   rowErrors: Record<string, string>;
+  /** Row id to whether renaming the active project is the remedy for its error. */
+  rowRemedies: Record<string, boolean>;
   restoringId: string | null;
   onRestore: (id: string) => void;
 }) {
@@ -486,12 +522,16 @@ function DeletedProjects({
           deletedAt={project.deletedAt}
           error={rowErrors[project._id]}
           errorAction={
-            <Link
-              to="/app/projects"
-              className="rounded-sm text-primary-text hover:underline"
-            >
-              Rename the active project
-            </Link>
+            // Only offered for a title conflict, which is the one failure
+            // renaming can actually resolve.
+            rowRemedies[project._id] ? (
+              <Link
+                to="/app/projects"
+                className="rounded-sm text-primary-text hover:underline"
+              >
+                Rename the active project
+              </Link>
+            ) : undefined
           }
           restoring={restoringId === project._id}
           onRestore={() => onRestore(project._id)}

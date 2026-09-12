@@ -69,6 +69,17 @@ export function LinksPage() {
   }, [urlsQuery.data, search, projectFilter, statusFilter]);
 
   const total = urlsQuery.data?.length ?? 0;
+  /*
+   * GET /urls?deleted=false returns active *and* scheduled links, so the list
+   * length is not the active count. The chip used to render it as "8 active"
+   * on a workspace with six active links and two scheduled ones — a wrong
+   * number beside the page title, and one the Dashboard contradicted.
+   */
+  const activeCount = useMemo(
+    () => (urlsQuery.data ?? []).filter((link) => link.status === 'active').length,
+    [urlsQuery.data]
+  );
+  const scheduledCount = total - activeCount;
   const filtered =
     search.trim() !== '' || projectFilter !== 'all' || statusFilter !== 'all';
 
@@ -85,7 +96,11 @@ export function LinksPage() {
           <h1 className="text-heading-xl">All Links</h1>
           {urlsQuery.isSuccess && (
             <span className="rounded-full bg-surface-subtle px-xs py-3xs text-label-md text-content-secondary">
-              {filtered ? `${visible.length} of ${total}` : `${total} active`}
+              {filtered
+                ? `${visible.length} of ${total}`
+                : scheduledCount > 0
+                  ? `${activeCount} active · ${scheduledCount} scheduled`
+                  : `${activeCount} active`}
             </span>
           )}
         </div>

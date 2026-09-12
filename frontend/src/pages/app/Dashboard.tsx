@@ -85,6 +85,7 @@ export function DashboardPage() {
 
   const metrics = useMemo(() => deriveMetrics(links), [links]);
   const counts = useMemo(() => linkCountsByProject(links), [links]);
+  const lastVisits = useMemo(() => lastVisitByProject(links), [links]);
 
   const projectTitles = useMemo(() => {
     const titles = new Map<string, string>();
@@ -337,6 +338,7 @@ export function DashboardPage() {
                     <ShelfCard
                       project={project}
                       linkCount={counts.get(project._id) ?? 0}
+                      lastVisit={lastVisits.get(project._id)}
                     />
                   </li>
                 ))}
@@ -363,7 +365,33 @@ export function DashboardPage() {
   );
 }
 
-function ShelfCard({ project, linkCount }: { project: Project; linkCount: number }) {
+/**
+ * `project.updatedAt` only moves when the title is renamed — the model has three
+ * fields and none of them records traffic — so labelling it "Active" told the
+ * user something false on the one screen whose job is reporting activity. Real
+ * recency is one reduce over the link list this page already holds.
+ */
+function lastVisitByProject(links: ShortUrl[]) {
+  const latest = new Map<string, string>();
+  for (const link of links) {
+    if (!link.lastAccessedAt) continue;
+    const current = latest.get(link.project);
+    if (!current || link.lastAccessedAt > current) {
+      latest.set(link.project, link.lastAccessedAt);
+    }
+  }
+  return latest;
+}
+
+function ShelfCard({
+  project,
+  linkCount,
+  lastVisit,
+}: {
+  project: Project;
+  linkCount: number;
+  lastVisit?: string;
+}) {
   return (
     <Link
       to={`/app/projects/${project._id}`}
@@ -383,7 +411,7 @@ function ShelfCard({ project, linkCount }: { project: Project; linkCount: number
           {formatCount(linkCount)} {linkCount === 1 ? 'link' : 'links'}
         </span>
         <span className="block text-body-sm text-content-tertiary">
-          Active {formatRelative(project.updatedAt)}
+          {lastVisit ? `Last visit ${formatRelative(lastVisit)}` : 'No visits yet'}
         </span>
       </span>
     </Link>

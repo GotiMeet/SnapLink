@@ -38,7 +38,13 @@ export function SettingsLayout() {
       <Tabs<SettingsTab>
         label="Settings sections"
         active={active}
-        onChange={(next) => navigate(`/app/settings/${next}`)}
+        /*
+         * `replace` because Tabs selects on focus: arrowing across the strip
+         * would otherwise push a history entry per keypress, so a keyboard user
+         * exploring the tabs silently buried whatever they arrived from. The
+         * Recycle Bin and analytics tab strips already do this.
+         */
+        onChange={(next) => navigate(`/app/settings/${next}`, { replace: true })}
         tabs={[
           { id: 'profile', label: 'Profile' },
           { id: 'security', label: 'Security' },

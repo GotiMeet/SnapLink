@@ -1,4 +1,4 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { CheckCircle2, QrCode } from 'lucide-react';
 import { createUrl, type CreateUrlBody } from '@/api/urls';
@@ -76,8 +76,17 @@ export function CreateLinkDrawer({
 
   const { reset } = createMutation;
 
-  useEffect(() => {
-    if (!open) return;
+  /**
+   * Returns the form to its opening state.
+   *
+   * Both the drawer opening and "Create another" need this. The latter used to
+   * clear only the success flag, and because the reset effect keys on `open` —
+   * which has not changed — the form still held the previous link's
+   * destination, title and alias. Submitting again sent a duplicate title to
+   * the same project and was refused with a 409, on the one control that exists
+   * specifically for creating several links in a row.
+   */
+  const resetForm = useCallback(() => {
     setForm({
       ...EMPTY,
       projectId: projectId ?? '',
@@ -85,7 +94,12 @@ export function CreateLinkDrawer({
     });
     setCreated(null);
     reset();
-  }, [open, projectId, initialUrl, reset]);
+  }, [projectId, initialUrl, reset]);
+
+  useEffect(() => {
+    if (!open) return;
+    resetForm();
+  }, [open, resetForm]);
 
   const schedule = validateSchedule(form.liveAt, form.deleteAt);
   const passwordError =
@@ -151,7 +165,7 @@ export function CreateLinkDrawer({
           title="Link created"
           footer={
             <>
-              <Button variant="secondary" onClick={() => setCreated(null)}>
+              <Button variant="secondary" onClick={resetForm}>
                 Create another
               </Button>
               <Button onClick={() => onOpenChange(false)}>Done</Button>
