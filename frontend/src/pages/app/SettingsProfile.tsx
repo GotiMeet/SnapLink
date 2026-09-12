@@ -10,12 +10,12 @@ import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { RadioCards } from '@/components/ui/RadioCards';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
 import { useVerificationResend } from '@/hooks/useVerificationResend';
 import { ApiError } from '@/lib/api';
-import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/format';
 import type { User } from '@/types/models';
 
@@ -258,39 +258,18 @@ function ThemeCard() {
         Saved on this device. It applies immediately and is not synced to your account.
       </p>
 
-      <div
-        role="radiogroup"
-        aria-label="Colour theme"
-        className="mt-md grid gap-xs sm:grid-cols-3"
-      >
-        {THEMES.map(({ value, label, hint, Icon }) => (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={theme === value}
-            onClick={() => setTheme(value)}
-            className={cn(
-              'flex items-start gap-xs rounded-md border p-sm text-left transition-colors',
-              theme === value
-                ? 'border-primary-600 bg-primary-50'
-                : 'border-border-subtle hover:border-border-strong'
-            )}
-          >
-            <Icon
-              className={cn(
-                'mt-3xs h-4 w-4 shrink-0',
-                theme === value ? 'text-primary-text' : 'text-content-tertiary'
-              )}
-              aria-hidden
-            />
-            <span className="flex flex-col">
-              <span className="text-label-lg text-content-primary">{label}</span>
-              <span className="text-body-sm text-content-secondary">{hint}</span>
-            </span>
-          </button>
-        ))}
-      </div>
+      <RadioCards
+        label="Colour theme"
+        value={theme}
+        onChange={setTheme}
+        className="mt-md sm:grid-cols-3"
+        options={THEMES.map(({ value, label, hint, Icon }) => ({
+          value,
+          label,
+          hint,
+          icon: <Icon className="h-4 w-4" />,
+        }))}
+      />
     </Card>
   );
 }

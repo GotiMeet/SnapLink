@@ -2,10 +2,19 @@ import { Globe, Lock } from 'lucide-react';
 
 import { Input } from '@/components/ui/Input';
 import { PasswordInput } from '@/components/ui/PasswordInput';
-import { cn } from '@/lib/cn';
+import { RadioCards, type RadioCardOption } from '@/components/ui/RadioCards';
 import { nowInputValue } from '@/lib/dates';
 import { LINK_PASSWORD_MAX, LINK_PASSWORD_MIN } from '@/lib/links';
 import type { Visibility } from '@/types/models';
+
+/** Resolved once: it cannot change while the page is open. */
+const localTimeZone = (() => {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone ?? '';
+  } catch {
+    return '';
+  }
+})();
 
 /**
  * Public / private choice and the password it conditionally requires.
@@ -42,53 +51,32 @@ export function VisibilityFields({
 }) {
   const mismatch = confirmPassword.length > 0 && password !== confirmPassword;
 
-  const options: Array<{
-    value: Visibility;
-    label: string;
-    hint: string;
-    Icon: typeof Globe;
-  }> = [
-    { value: 'public', label: 'Public', hint: 'Anyone with the link', Icon: Globe },
-    { value: 'private', label: 'Protected', hint: 'Password required', Icon: Lock },
+  const options: ReadonlyArray<RadioCardOption<Visibility>> = [
+    {
+      value: 'public',
+      label: 'Public',
+      hint: 'Anyone with the link',
+      icon: <Globe className="h-4 w-4" />,
+    },
+    {
+      value: 'private',
+      label: 'Protected',
+      hint: 'Password required',
+      icon: <Lock className="h-4 w-4" />,
+    },
   ];
 
   return (
     <fieldset className="flex flex-col gap-sm" disabled={disabled}>
       <legend className="mb-2xs text-label-lg text-content-primary">Visibility</legend>
 
-      <div
-        role="radiogroup"
-        aria-label="Visibility"
-        className="grid gap-xs sm:grid-cols-2"
-      >
-        {options.map(({ value, label, hint, Icon }) => (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={visibility === value}
-            onClick={() => onVisibilityChange(value)}
-            className={cn(
-              'flex items-start gap-xs rounded-md border p-sm text-left transition-colors',
-              visibility === value
-                ? 'border-primary-600 bg-primary-50'
-                : 'border-border-subtle hover:border-border-strong'
-            )}
-          >
-            <Icon
-              className={cn(
-                'mt-3xs h-4 w-4 shrink-0',
-                visibility === value ? 'text-primary-text' : 'text-content-tertiary'
-              )}
-              aria-hidden
-            />
-            <span className="flex flex-col">
-              <span className="text-label-lg text-content-primary">{label}</span>
-              <span className="text-body-sm text-content-secondary">{hint}</span>
-            </span>
-          </button>
-        ))}
-      </div>
+      <RadioCards
+        label="Visibility"
+        options={options}
+        value={visibility}
+        onChange={onVisibilityChange}
+        disabled={disabled}
+      />
 
       {visibility === 'private' && (
         <div className="flex flex-col gap-sm">
@@ -155,6 +143,16 @@ export function ScheduleFields({
       <legend className="mb-2xs text-label-lg text-content-primary">
         Scheduling <span className="text-content-tertiary">(optional)</span>
       </legend>
+
+      {/*
+        Values are entered as local wall-clock time and converted to ISO for the
+        API, which is handled in lib/dates.ts — but nothing said so, while the
+        analytics screens state plainly that they report in UTC. A user
+        scheduling a 9am launch had no confirmation of whose 9am.
+      */}
+      <p className="-mt-2xs text-body-sm text-content-tertiary">
+        Times are in your timezone{localTimeZone ? ` (${localTimeZone})` : ''}.
+      </p>
 
       <Input
         label="Go live"

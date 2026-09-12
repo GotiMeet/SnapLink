@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useId, useRef, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { useMutation } from '@tanstack/react-query';
 import { KeyRound } from 'lucide-react';
@@ -32,6 +32,9 @@ export function ResetPasswordPage() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [showMismatch, setShowMismatch] = useState(false);
+  const [showPasswordError, setShowPasswordError] = useState(false);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const requirementsId = useId();
 
   const resetMutation = useMutation({
     mutationFn: resetPassword,
@@ -63,10 +66,23 @@ export function ResetPasswordPage() {
 
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (mismatch) {
+
+    /*
+     * Validated here rather than by disabling the button. A disabled submit is
+     * not announced to assistive technology and gives a sighted user nothing to
+     * act on; focus moving to the field that failed does both.
+     */
+    if (!isPasswordValid(password)) {
+      setShowPasswordError(true);
+      passwordRef.current?.focus();
+      return;
+    }
+    if (mismatch || !confirmPassword) {
       setShowMismatch(true);
       return;
     }
+
+    setShowPasswordError(false);
     setShowMismatch(false);
     resetMutation.mutate({ token, password });
   };
@@ -113,12 +129,21 @@ export function ResetPasswordPage() {
             autoComplete="new-password"
             required
             autoFocus
+            ref={passwordRef}
             value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            error={apiError?.fieldError('password')}
+            onChange={(event) => {
+              setPassword(event.target.value);
+              setShowPasswordError(false);
+            }}
+            aria-describedby={requirementsId}
+            error={
+              showPasswordError && !isPasswordValid(password)
+                ? 'Password does not meet the requirements below.'
+                : apiError?.fieldError('password')
+            }
             disabled={resetMutation.isPending}
           />
-          <PasswordRequirements value={password} />
+          <PasswordRequirements id={requirementsId} value={password} />
         </div>
 
         <PasswordInput
@@ -144,7 +169,7 @@ export function ResetPasswordPage() {
           type="submit"
           fullWidth
           loading={resetMutation.isPending}
-          disabled={!isPasswordValid(password) || mismatch || !confirmPassword}
+          disabled={resetMutation.isPending}
         >
           Reset password
         </Button>

@@ -259,6 +259,13 @@ function ProjectTitleEditor({ project }: { project: Project }) {
 
   return (
     <form className="flex flex-col gap-xs" onSubmit={submit} noValidate>
+      {/*
+        The visible h1 is replaced by this form while editing, which left the
+        document with no level-one heading — so a screen reader user navigating
+        by heading lost the page's identity exactly while they were changing it.
+      */}
+      <h1 className="sr-only">{project.title}</h1>
+
       <div className="flex flex-wrap items-end gap-xs">
         <div className="min-w-0 flex-1 sm:max-w-md">
           <Input

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useId, useState, type FormEvent } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { BadgeCheck, KeyRound, Mail, ShieldAlert } from 'lucide-react';
@@ -170,6 +170,9 @@ function PasswordCard({ user }: { user: User }) {
 function SetPasswordForm({ onAlreadySet }: { onAlreadySet: () => void }) {
   const [password, setPasswordValue] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  // Ties the rules below the field to the field itself, so a screen reader
+  // announces them instead of leaving the user to guess.
+  const requirementsId = useId();
 
   const mutation = useMutation({
     mutationFn: setPassword,
@@ -216,10 +219,11 @@ function SetPasswordForm({ onAlreadySet }: { onAlreadySet: () => void }) {
           required
           value={password}
           onChange={(event) => setPasswordValue(event.target.value)}
+          aria-describedby={requirementsId}
           error={apiError?.fieldError('password')}
           disabled={mutation.isPending}
         />
-        <PasswordRequirements value={password} />
+        <PasswordRequirements id={requirementsId} value={password} />
       </div>
 
       <PasswordInput
@@ -262,6 +266,7 @@ function ChangePasswordForm({ onNotSet }: { onNotSet: () => void }) {
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [confirming, setConfirming] = useState(false);
+  const requirementsId = useId();
 
   const mutation = useMutation({
     mutationFn: changePassword,
@@ -337,10 +342,11 @@ function ChangePasswordForm({ onNotSet }: { onNotSet: () => void }) {
             required
             value={newPassword}
             onChange={(event) => setNewPassword(event.target.value)}
+            aria-describedby={requirementsId}
             error={apiError?.fieldError('newPassword')}
             disabled={mutation.isPending}
           />
-          <PasswordRequirements value={newPassword} />
+          <PasswordRequirements id={requirementsId} value={newPassword} />
         </div>
 
         <PasswordInput

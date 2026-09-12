@@ -5,8 +5,8 @@ import { Menu, Monitor, Moon, Sun, X } from 'lucide-react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
-import { cn } from '@/lib/cn';
 import { BrandMark } from './BrandMark';
+import { RadioCards } from '@/components/ui/RadioCards';
 import { CreateMenu } from './CreateMenu';
 import { QuickSearch } from './QuickSearch';
 import { ProfileMenu } from './ProfileMenu';
@@ -27,31 +27,17 @@ function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div
-      role="radiogroup"
-      aria-label="Colour theme"
-      className="flex items-center gap-3xs rounded-md border border-border-subtle p-3xs"
-    >
-      {THEMES.map(({ value, label, Icon }) => (
-        <button
-          key={value}
-          type="button"
-          role="radio"
-          aria-checked={theme === value}
-          aria-label={label}
-          title={label}
-          onClick={() => setTheme(value)}
-          className={cn(
-            'rounded-sm p-2xs transition-colors',
-            theme === value
-              ? 'bg-primary-50 text-primary-text'
-              : 'text-content-tertiary hover:text-content-primary'
-          )}
-        >
-          <Icon className="h-4 w-4" aria-hidden />
-        </button>
-      ))}
-    </div>
+    <RadioCards
+      compact
+      label="Colour theme"
+      value={theme}
+      onChange={setTheme}
+      options={THEMES.map(({ value, label, Icon }) => ({
+        value,
+        label,
+        icon: <Icon className="h-4 w-4" aria-hidden />,
+      }))}
+    />
   );
 }
 
