@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { CheckCircle2, QrCode } from 'lucide-react';
+import { CheckCircle2, FolderPlus, QrCode } from 'lucide-react';
 import { createUrl, type CreateUrlBody } from '@/api/urls';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
+import { CreateProjectModal } from '@/components/projects/CreateProjectModal';
 import { Drawer } from '@/components/ui/Drawer';
 import { Input } from '@/components/ui/Input';
 import { env } from '@/env';
@@ -57,6 +58,7 @@ export function CreateLinkDrawer({
   const [form, setForm] = useState(EMPTY);
   const [created, setCreated] = useState<ShortUrl | null>(null);
   const [qrFor, setQrFor] = useState<ShortUrl | null>(null);
+  const [creatingProject, setCreatingProject] = useState(false);
 
   const set = <K extends keyof typeof EMPTY>(key: K, value: (typeof EMPTY)[K]) =>
     setForm((current) => ({ ...current, [key]: value }));
@@ -289,9 +291,23 @@ export function CreateLinkDrawer({
               </option>
             ))}
           </select>
+          {/*
+            An escape hatch rather than a dead end. With no projects the field
+            used to show a red line telling the user what they needed and no way
+            to get it — and the menu that opened this drawer was behind the
+            overlay. This is reachable from the top bar on a first session.
+          */}
           {projectsQuery.isSuccess && projectsQuery.data.length === 0 && (
-            <span className="text-body-sm text-danger-text">
-              Create a project first — every link needs one.
+            <span className="flex flex-wrap items-center gap-xs text-body-sm text-content-secondary">
+              Every link needs a project.
+              <button
+                type="button"
+                onClick={() => setCreatingProject(true)}
+                className="inline-flex items-center gap-3xs rounded-sm font-semibold text-primary-text hover:underline"
+              >
+                <FolderPlus className="h-4 w-4" aria-hidden />
+                Create one now
+              </button>
             </span>
           )}
           {apiError?.fieldError('projectId') && (
@@ -333,6 +349,17 @@ export function CreateLinkDrawer({
           disabled={createMutation.isPending}
         />
       </form>
+
+      {/*
+        Stacked above the drawer. Radix handles the nesting, and selecting the
+        new project immediately means the user returns to exactly the form they
+        left, one field further on.
+      */}
+      <CreateProjectModal
+        open={creatingProject}
+        onOpenChange={setCreatingProject}
+        onCreated={(newProjectId) => set('projectId', newProjectId)}
+      />
     </Drawer>
   );
 }

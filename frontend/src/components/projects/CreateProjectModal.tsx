@@ -72,7 +72,14 @@ export function CreateProjectModal({
       open={open}
       onOpenChange={onOpenChange}
       title="New project"
-      description="You can rename this project or move links into it at any time."
+      /*
+       * This used to promise that links could be moved into a project "at any
+       * time". A link's project is fixed at creation — PROJECT_MASTER.md §3 and
+       * §16 both rule the move out and no endpoint exists for it — so the copy
+       * described a capability the product deliberately does not have, and a
+       * user who created a scratch project on that basis had no way back.
+       */
+      description="Projects group your links. You can rename one whenever you like; a link stays in the project it was created in."
       size="sm"
     >
       <form className="flex flex-col gap-md" onSubmit={submit} noValidate>
