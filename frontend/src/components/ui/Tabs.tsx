@@ -25,12 +25,14 @@ export function Tabs<T extends string>({
   active,
   onChange,
   label,
+  className,
 }: {
   tabs: ReadonlyArray<TabDefinition<T>>;
   active: T;
   onChange: (id: T) => void;
   /** Accessible name for the tab strip itself. */
   label: string;
+  className?: string;
 }) {
   const stripRef = useRef<HTMLDivElement>(null);
 
@@ -71,7 +73,10 @@ export function Tabs<T extends string>({
        * axis to `auto`, and the tabs' -mb-px overflows by exactly that pixel,
        * which paints a stray vertical scrollbar beside the strip.
        */
-      className="flex gap-2xs overflow-x-auto overflow-y-hidden border-b border-border-subtle"
+      className={cn(
+        'flex gap-2xs overflow-x-auto overflow-y-hidden border-b border-border-subtle',
+        className
+      )}
     >
       {tabs.map((tab) => {
         const selected = tab.id === active;

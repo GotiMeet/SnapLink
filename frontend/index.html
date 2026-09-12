@@ -8,6 +8,14 @@
       name="description"
       content="Shorten URLs, organise them into projects, protect them with passwords, and track clicks and QR scans with privacy-first analytics."
     />
+    <!--
+      Without this browsers request /favicon.ico, receive the SPA's history
+      fallback, and show a default globe in the tab. `theme-color` keeps the
+      mobile browser chrome from fighting a dark page.
+    -->
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F8FAFC" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0A0D14" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link

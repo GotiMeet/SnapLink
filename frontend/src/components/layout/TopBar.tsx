@@ -5,8 +5,8 @@ import { Menu, Monitor, Moon, Sun, X } from 'lucide-react';
 
 import { useAuth } from '@/hooks/useAuth';
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
-import { cn } from '@/lib/cn';
 import { BrandMark } from './BrandMark';
+import { RadioCards } from '@/components/ui/RadioCards';
 import { CreateMenu } from './CreateMenu';
 import { QuickSearch } from './QuickSearch';
 import { ProfileMenu } from './ProfileMenu';
@@ -27,31 +27,17 @@ function ThemeToggle() {
   const { theme, setTheme } = useTheme();
 
   return (
-    <div
-      role="radiogroup"
-      aria-label="Colour theme"
-      className="flex items-center gap-3xs rounded-md border border-border-subtle p-3xs"
-    >
-      {THEMES.map(({ value, label, Icon }) => (
-        <button
-          key={value}
-          type="button"
-          role="radio"
-          aria-checked={theme === value}
-          aria-label={label}
-          title={label}
-          onClick={() => setTheme(value)}
-          className={cn(
-            'rounded-sm p-2xs transition-colors',
-            theme === value
-              ? 'bg-primary-50 text-primary-text'
-              : 'text-content-tertiary hover:text-content-primary'
-          )}
-        >
-          <Icon className="h-4 w-4" aria-hidden />
-        </button>
-      ))}
-    </div>
+    <RadioCards
+      compact
+      label="Colour theme"
+      value={theme}
+      onChange={setTheme}
+      options={THEMES.map(({ value, label, Icon }) => ({
+        value,
+        label,
+        icon: <Icon className="h-4 w-4" aria-hidden />,
+      }))}
+    />
   );
 }
 
@@ -72,14 +58,14 @@ export function TopBar() {
           <button
             type="button"
             aria-label="Open navigation menu"
-            className="rounded-md p-2xs text-content-secondary hover:bg-surface-subtle lg:hidden"
+            className="flex h-10 w-10 items-center justify-center rounded-md text-content-secondary hover:bg-surface-subtle lg:hidden"
           >
             <Menu className="h-5 w-5" aria-hidden />
           </button>
         </Dialog.Trigger>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 lg:hidden" />
-          <Dialog.Content className="fixed inset-y-0 left-0 z-50 w-64 overflow-y-auto border-r border-border-subtle bg-surface-card lg:hidden">
+          <Dialog.Content className="fixed inset-y-0 left-0 z-50 flex w-64 flex-col overflow-y-auto border-r border-border-subtle bg-surface-card lg:hidden">
             <Dialog.Title className="sr-only">Navigation</Dialog.Title>
             <div className="flex h-16 items-center justify-between px-sm">
               <BrandMark />
@@ -91,6 +77,20 @@ export function TopBar() {
               </Dialog.Close>
             </div>
             <SidebarNav onNavigate={() => setDrawerOpen(false)} />
+
+            {/*
+              The bar has no room for a three-state control on a phone once
+              search, create and the account menu are present, which left theme
+              three levels deep in Settings — the one place it is least likely
+              to be looked for and most likely to be wanted. The drawer has the
+              room and is one tap from any screen.
+            */}
+            <div className="mt-auto border-t border-border-subtle p-sm sm:hidden">
+              <p className="mb-xs text-label-md uppercase tracking-wide text-content-tertiary">
+                Theme
+              </p>
+              <ThemeToggle />
+            </div>
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>

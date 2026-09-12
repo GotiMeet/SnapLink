@@ -1,6 +1,6 @@
 import { useMemo, useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { BarChart3, Folder, Link2, Plus, QrCode } from 'lucide-react';
+import { ArrowRight, BarChart3, Folder, Link2, Plus, QrCode } from 'lucide-react';
 
 import { StatCard } from '@/components/analytics/StatCard';
 import { WelcomeOnboarding } from '@/components/dashboard/WelcomeOnboarding';
@@ -85,6 +85,7 @@ export function DashboardPage() {
 
   const metrics = useMemo(() => deriveMetrics(links), [links]);
   const counts = useMemo(() => linkCountsByProject(links), [links]);
+  const lastVisits = useMemo(() => lastVisitByProject(links), [links]);
 
   const projectTitles = useMemo(() => {
     const titles = new Map<string, string>();
@@ -124,19 +125,20 @@ export function DashboardPage() {
 
   return (
     <div className="flex flex-col gap-lg">
+      {/*
+        "New link" is gone from the header. Between the top bar's Create menu,
+        this button and the quick-shorten field below it, three controls within
+        200 vertical pixels opened the same drawer — which reads as indecision
+        and costs the dashboard its most valuable space. The quick field is the
+        one kept, because it carries a destination with it.
+      */}
       <header className="flex flex-wrap items-center justify-between gap-md">
         <h1 className="text-heading-xl">Dashboard</h1>
 
-        <div className="flex flex-wrap gap-xs">
-          <Button variant="secondary" onClick={() => setCreatingProject(true)}>
-            <Plus className="h-4 w-4" aria-hidden />
-            New project
-          </Button>
-          <Button onClick={() => openDrawerWith('')}>
-            <Plus className="h-4 w-4" aria-hidden />
-            New link
-          </Button>
-        </div>
+        <Button variant="secondary" onClick={() => setCreatingProject(true)}>
+          <Plus className="h-4 w-4" aria-hidden />
+          New project
+        </Button>
       </header>
 
       {failed && (
@@ -168,13 +170,13 @@ export function DashboardPage() {
         />
       ) : (
         <>
+          {/*
+            The button stacks below the field on a phone. Side by side at 390px
+            it took 45% of the row and left the input showing about thirty
+            characters, which is not enough of a URL to recognise.
+          */}
           <form className="flex flex-col gap-2xs" onSubmit={quickStart}>
-            {/*
-              The hint sits under the whole row rather than inside the field, so
-              the button aligns with the input instead of being pushed down by
-              the field's own helper text.
-            */}
-            <div className="flex flex-wrap items-end gap-xs">
+            <div className="flex flex-col gap-xs sm:flex-row sm:items-end">
               <div className="min-w-0 flex-1">
                 <Input
                   label="Shorten a link"
@@ -186,8 +188,15 @@ export function DashboardPage() {
                   aria-describedby="quick-url-hint"
                 />
               </div>
+              {/*
+                "Shorten" named the completed action, but POST /urls needs a
+                project and a title as well as a destination, so this opens the
+                form with the destination filled in. A button should name what
+                happens when it is pressed.
+              */}
               <Button type="submit" disabled={!quickUrl.trim()}>
-                Shorten
+                Continue
+                <ArrowRight className="h-4 w-4" aria-hidden />
               </Button>
             </div>
             <p id="quick-url-hint" className="text-body-sm text-content-tertiary">
@@ -200,7 +209,7 @@ export function DashboardPage() {
               Workspace metrics
             </h2>
 
-            <div className="grid gap-md sm:grid-cols-2 xl:grid-cols-4">
+            <div className="grid grid-cols-2 gap-sm sm:gap-md xl:grid-cols-4">
               <StatCard
                 icon={Link2}
                 label="Active links"
@@ -337,6 +346,7 @@ export function DashboardPage() {
                     <ShelfCard
                       project={project}
                       linkCount={counts.get(project._id) ?? 0}
+                      lastVisit={lastVisits.get(project._id)}
                     />
                   </li>
                 ))}
@@ -363,7 +373,33 @@ export function DashboardPage() {
   );
 }
 
-function ShelfCard({ project, linkCount }: { project: Project; linkCount: number }) {
+/**
+ * `project.updatedAt` only moves when the title is renamed — the model has three
+ * fields and none of them records traffic — so labelling it "Active" told the
+ * user something false on the one screen whose job is reporting activity. Real
+ * recency is one reduce over the link list this page already holds.
+ */
+function lastVisitByProject(links: ShortUrl[]) {
+  const latest = new Map<string, string>();
+  for (const link of links) {
+    if (!link.lastAccessedAt) continue;
+    const current = latest.get(link.project);
+    if (!current || link.lastAccessedAt > current) {
+      latest.set(link.project, link.lastAccessedAt);
+    }
+  }
+  return latest;
+}
+
+function ShelfCard({
+  project,
+  linkCount,
+  lastVisit,
+}: {
+  project: Project;
+  linkCount: number;
+  lastVisit?: string;
+}) {
   return (
     <Link
       to={`/app/projects/${project._id}`}
@@ -383,7 +419,7 @@ function ShelfCard({ project, linkCount }: { project: Project; linkCount: number
           {formatCount(linkCount)} {linkCount === 1 ? 'link' : 'links'}
         </span>
         <span className="block text-body-sm text-content-tertiary">
-          Active {formatRelative(project.updatedAt)}
+          {lastVisit ? `Last visit ${formatRelative(lastVisit)}` : 'No visits yet'}
         </span>
       </span>
     </Link>

@@ -1,43 +1,21 @@
-import { useMutation } from '@tanstack/react-query';
 import { AlertTriangle } from 'lucide-react';
-import { toast } from 'sonner';
 
-import { resendVerificationEmail } from '@/api/auth';
 import { Button } from '@/components/ui/Button';
 import { useAuth } from '@/hooks/useAuth';
-import { useCooldown } from '@/hooks/useCooldown';
-import { ApiError } from '@/lib/api';
-
-const RESEND_COOLDOWN_SECONDS = 60;
+import { useVerificationResend } from '@/hooks/useVerificationResend';
 
 /**
  * Contextual alert shown above every authenticated page while the account is
  * unverified (SCR-AUTH-12E).
  *
- * The 60-second wait is timed client-side after a send: no endpoint reports the
- * remaining cooldown, and the server only discloses it by refusing with a 429
- * (PROJECT_MASTER.md section 11). A rejection starts the timer too, so a user
- * who hits the limit is not invited straight back into it.
+ * The mutation and its 60-second wait live in useVerificationResend, which
+ * shares the cooldown with the copy of this control in Settings -> Profile.
+ * Both are on screen together on that page, and with separate timers a user
+ * could spend two of the server's three hourly sends in two clicks.
  */
 export function UnverifiedEmailBanner() {
   const { user } = useAuth();
-  const cooldown = useCooldown();
-
-  const resendMutation = useMutation({
-    mutationFn: resendVerificationEmail,
-    onSuccess: () => {
-      toast.success('Verification email sent. Check your inbox.');
-      cooldown.start(RESEND_COOLDOWN_SECONDS);
-    },
-    onError: (error) => {
-      if (error instanceof ApiError && error.isRateLimited) {
-        toast.error(error.message);
-        cooldown.start(RESEND_COOLDOWN_SECONDS);
-        return;
-      }
-      toast.error('Could not send the email. Please try again.');
-    },
-  });
+  const resend = useVerificationResend();
 
   if (!user || user.isEmailVerified) return null;
 
@@ -54,11 +32,11 @@ export function UnverifiedEmailBanner() {
       <Button
         size="sm"
         variant="secondary"
-        onClick={() => resendMutation.mutate(user.email)}
-        loading={resendMutation.isPending}
-        disabled={cooldown.active}
+        onClick={() => resend.resend(user.email)}
+        loading={resend.isPending}
+        disabled={resend.active}
       >
-        {cooldown.active ? `Resend in ${cooldown.remaining}s` : 'Resend email'}
+        {resend.active ? `Resend in ${resend.remaining}s` : 'Resend email'}
       </Button>
     </div>
   );

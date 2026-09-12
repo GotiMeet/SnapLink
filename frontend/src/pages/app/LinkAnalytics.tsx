@@ -60,10 +60,35 @@ export function LinkAnalyticsPage() {
   const [params, setParams] = useSearchParams();
   const tab: Tab = params.get('tab') === 'breakdowns' ? 'breakdowns' : 'overview';
 
-  const [range, setRange] = useState<DateRange>(() => presetRange(DEFAULT_RANGE_DAYS));
+  /*
+   * The window lives in the URL alongside the tab. It used to be component
+   * state while the tab was a search param, so half the screen's state was
+   * durable and half was not: a custom window took four interactions to set and
+   * was discarded by a single click on a breadcrumb, and could be neither
+   * bookmarked nor shared.
+   */
+  const range = useMemo<DateRange>(() => {
+    const from = params.get('from');
+    const to = params.get('to');
+    return from && to ? { from, to } : presetRange(DEFAULT_RANGE_DAYS);
+  }, [params]);
+
+  const setRange = (next: DateRange) => {
+    setParams(
+      (current) => {
+        const updated = new URLSearchParams(current);
+        updated.set('from', next.from);
+        updated.set('to', next.to);
+        return updated;
+      },
+      { replace: true }
+    );
+  };
 
   const linkQuery = useUrl(urlId);
   const analyticsQuery = useLinkAnalytics(urlId, range);
+  // Undefined while loading, so the strip is not hidden then shown again.
+  const hasVisits = (analyticsQuery.data?.overview.totalVisits ?? 1) > 0;
 
   usePageMeta({
     title: linkQuery.data ? `${linkQuery.data.title} analytics` : 'Link analytics',
@@ -113,11 +138,28 @@ export function LinkAnalyticsPage() {
 
       <DateRangePicker range={range} onChange={setRange} />
 
+      {/*
+        The tab strip is hidden when the window has no visits. Both tabs
+        short-circuit to the same empty state in that case, so the strip stayed
+        fully interactive while switching it changed the selected tab, the URL
+        and nothing else — which reads as a broken feature rather than an empty
+        one, and every new link is in that state.
+      */}
       <Tabs<Tab>
+        className={hasVisits ? undefined : 'hidden'}
         label="Analytics sections"
         active={tab}
+        // Preserves the window: replacing the whole param set would drop it.
         onChange={(next) =>
-          setParams(next === 'breakdowns' ? { tab: 'breakdowns' } : {}, { replace: true })
+          setParams(
+            (current) => {
+              const updated = new URLSearchParams(current);
+              if (next === 'breakdowns') updated.set('tab', 'breakdowns');
+              else updated.delete('tab');
+              return updated;
+            },
+            { replace: true }
+          )
         }
         tabs={[
           { id: 'overview', label: 'Overview & timeline' },

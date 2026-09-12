@@ -19,6 +19,7 @@ import { Modal } from '@/components/ui/Modal';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { env } from '@/env';
 import { useBreadcrumbTitle } from '@/hooks/useBreadcrumbTitle';
+import { useUnsavedChangesWarning } from '@/hooks/useUnsavedChangesWarning';
 import { useDeleteLink } from '@/hooks/useDeleteLink';
 import { useProject } from '@/hooks/useProjects';
 import { useUrl } from '@/hooks/useUrls';
@@ -91,6 +92,7 @@ function LinkDetail({ link }: { link: ShortUrl }) {
   const [qrOpen, setQrOpen] = useState(false);
   const [resetOpen, setResetOpen] = useState(false);
   const [confirmPublic, setConfirmPublic] = useState(false);
+  const [confirmAlias, setConfirmAlias] = useState(false);
 
   const { deleteLink, isDeleting } = useDeleteLink(() =>
     navigate('/app/links', { replace: true })
@@ -205,9 +207,23 @@ function LinkDetail({ link }: { link: ShortUrl }) {
     return body;
   };
 
+  /**
+   * Whether anything actually changed.
+   *
+   * `canSave` only checked validity, so the button was live on an untouched
+   * form and submitted a PATCH carrying nothing but the urlId. It is also what
+   * the navigation guard below reads: without it, a sidebar click or the back
+   * button discarded a rewritten destination URL with no prompt, on the only
+   * long form in the app.
+   */
+  const patchKeys = Object.keys(buildPatch()).filter((key) => key !== 'urlId');
+  const dirty = patchKeys.length > 0;
+
+  const aliasChanged = form.customAlias.trim() !== link.shortCode;
+
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    if (!canSave) return;
+    if (!canSave || !dirty) return;
 
     // Turning a protected link public deletes its stored password server-side.
     // That is not recoverable from this screen, so it is confirmed first.
@@ -216,8 +232,35 @@ function LinkDetail({ link }: { link: ShortUrl }) {
       return;
     }
 
+    /*
+     * Changing the alias changes the short code, so every URL already shared
+     * and every QR code already printed stops resolving — and the old code is
+     * not released for reuse, so there is no way back. It is the only edit in
+     * the product whose blast radius is outside the application.
+     */
+    if (aliasChanged) {
+      setConfirmAlias(true);
+      return;
+    }
+
     saveMutation.mutate(buildPatch());
   };
+
+  const discard = () => {
+    setForm({
+      title: link.title,
+      originalUrl: link.originalUrl,
+      customAlias: link.shortCode,
+      visibility: link.visibility as Visibility,
+      password: '',
+      confirmPassword: '',
+      liveAt: toLocalInputValue(link.scheduledLiveAt),
+      deleteAt: toLocalInputValue(link.scheduledDeleteAt),
+    });
+    saveMutation.reset();
+  };
+
+  useUnsavedChangesWarning(dirty && !saveMutation.isPending);
 
   const apiError = saveMutation.error instanceof ApiError ? saveMutation.error : null;
   const shortUrl = `${env.appUrl}/${link.shortCode}`;
@@ -296,7 +339,13 @@ function LinkDetail({ link }: { link: ShortUrl }) {
       <Card className="p-lg">
         <h2 className="text-heading-md">Configuration</h2>
 
-        <form className="mt-lg flex flex-col gap-lg" onSubmit={submit} noValidate>
+        {/*
+          Capped rather than filling the card. At full width a single-line title
+          field ran about 1,000px on a 1280px screen, putting its label and its
+          text entry point most of a screen apart, and stretching the two
+          visibility tiles to 480px each for two short lines of text.
+        */}
+        <form className="mt-lg flex max-w-2xl flex-col gap-lg" onSubmit={submit} noValidate>
           {apiError && !apiError.isValidation && (
             <Alert tone="danger">{apiError.message}</Alert>
           )}
@@ -367,8 +416,26 @@ function LinkDetail({ link }: { link: ShortUrl }) {
             disabled={saveMutation.isPending}
           />
 
-          <div className="flex justify-end">
-            <Button type="submit" loading={saveMutation.isPending} disabled={!canSave}>
+          <div className="flex items-center justify-end gap-xs">
+            {dirty && (
+              <p className="mr-auto text-body-sm text-content-tertiary">
+                {patchKeys.length === 1
+                  ? '1 unsaved change'
+                  : `${patchKeys.length} unsaved changes`}
+              </p>
+            )}
+            <Button
+              variant="secondary"
+              onClick={discard}
+              disabled={!dirty || saveMutation.isPending}
+            >
+              Discard
+            </Button>
+            <Button
+              type="submit"
+              loading={saveMutation.isPending}
+              disabled={!canSave || !dirty}
+            >
               Save changes
             </Button>
           </div>
@@ -418,6 +485,21 @@ function LinkDetail({ link }: { link: ShortUrl }) {
         saving={saveMutation.isPending}
         onConfirm={() => {
           setConfirmPublic(false);
+          // A link can be losing its password and changing its code in the same
+          // save; both consequences are confirmed before either is sent.
+          if (aliasChanged) setConfirmAlias(true);
+          else saveMutation.mutate(buildPatch());
+        }}
+      />
+
+      <ConfirmAliasChangeDialog
+        open={confirmAlias}
+        onOpenChange={setConfirmAlias}
+        saving={saveMutation.isPending}
+        currentCode={link.shortCode}
+        nextCode={form.customAlias.trim()}
+        onConfirm={() => {
+          setConfirmAlias(false);
           saveMutation.mutate(buildPatch());
         }}
       />
@@ -481,6 +563,68 @@ function ConfirmMakePublicDialog({
         current password is deleted. You can protect the link again later, but you will
         have to choose a new password.
       </p>
+    </Modal>
+  );
+}
+
+/**
+ * Changing the alias changes the short code, which every already-shared URL and
+ * every already-printed QR code points at. Those stop resolving the moment this
+ * saves, the old code is never released for reuse, and nothing on this screen
+ * can put it back — so the consequence is stated before the save runs.
+ */
+function ConfirmAliasChangeDialog({
+  open,
+  onOpenChange,
+  saving,
+  currentCode,
+  nextCode,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  saving: boolean;
+  currentCode: string;
+  nextCode: string;
+  onConfirm: () => void;
+}) {
+  return (
+    <Modal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Change this link's address?"
+      size="sm"
+      footer={
+        <>
+          <Button
+            variant="secondary"
+            onClick={() => onOpenChange(false)}
+            disabled={saving}
+          >
+            Cancel
+          </Button>
+          <Button variant="danger" loading={saving} onClick={onConfirm}>
+            Change address
+          </Button>
+        </>
+      }
+    >
+      <div className="flex flex-col gap-md">
+        <div className="flex flex-col gap-2xs rounded-md border border-border-subtle bg-surface-subtle p-sm font-mono text-mono-code">
+          <span className="text-content-tertiary line-through">
+            {shortLinkHost}/{currentCode}
+          </span>
+          <span className="text-primary-text">
+            {shortLinkHost}/{nextCode}
+          </span>
+        </div>
+
+        <Alert tone="warning">
+          Anyone using the old address gets an error page, including every QR
+          code already printed or shared. The old address is not reusable, so this
+          cannot be undone by changing it back.
+        </Alert>
+      </div>
     </Modal>
   );
 }

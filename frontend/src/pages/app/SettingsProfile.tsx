@@ -3,24 +3,23 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { BadgeCheck, Mail, Monitor, Moon, Sun } from 'lucide-react';
 
-import { resendVerificationEmail, updateProfile } from '@/api/auth';
+import { updateProfile } from '@/api/auth';
 import { ME_QUERY_KEY } from '@/auth/authContext';
 import { Alert } from '@/components/ui/Alert';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
+import { RadioCards } from '@/components/ui/RadioCards';
 import { Skeleton } from '@/components/ui/Skeleton';
 import { useAuth } from '@/hooks/useAuth';
-import { useCooldown } from '@/hooks/useCooldown';
 import { useTheme, type ThemeChoice } from '@/hooks/useTheme';
+import { useVerificationResend } from '@/hooks/useVerificationResend';
 import { ApiError } from '@/lib/api';
-import { cn } from '@/lib/cn';
 import { formatDate } from '@/lib/format';
 import type { User } from '@/types/models';
 
 const MAX_NAME = 100;
-const RESEND_COOLDOWN_SECONDS = 60;
 
 /** SCR-AUTH-12 / 12E. */
 export function SettingsProfilePage() {
@@ -124,7 +123,8 @@ function ProfileCard({ user }: { user: User }) {
         </div>
       </div>
 
-      <form className="mt-lg flex flex-col gap-md" onSubmit={submit} noValidate>
+      {/* Capped so a name field is not ten times wider than any name. */}
+      <form className="mt-lg flex max-w-xl flex-col gap-md" onSubmit={submit} noValidate>
         {apiError && !apiError.isValidation && (
           <Alert tone="danger">{apiError.message}</Alert>
         )}
@@ -171,32 +171,25 @@ function ProfileCard({ user }: { user: User }) {
  * server only discloses it by refusing with a 429 (section 11).
  */
 function EmailRow({ user }: { user: User }) {
-  const cooldown = useCooldown();
-
-  const resendMutation = useMutation({
-    mutationFn: resendVerificationEmail,
-    onSuccess: () => {
-      toast.success('Verification email sent. Check your inbox.');
-      cooldown.start(RESEND_COOLDOWN_SECONDS);
-    },
-    onError: (error) => {
-      if (error instanceof ApiError && error.isRateLimited) {
-        toast.error(error.message);
-        cooldown.start(RESEND_COOLDOWN_SECONDS);
-        return;
-      }
-      toast.error('Could not send the email. Please try again.');
-    },
-  });
+  // Shared with the banner above the page, which offers the same action: with
+  // separate timers, pressing one left the other enabled.
+  const resend = useVerificationResend();
 
   return (
     <div className="flex flex-col gap-2xs">
+      {/*
+        `readOnly` without `disabled`. Disabled took the field out of the tab
+        order, so a keyboard user could not reach or copy their own registered
+        address, and the disabled palette rendered it at 4.27:1 — under the
+        4.5:1 this design system commits to. Nothing here is interactive, so it
+        is presented as a value rather than as a dead input.
+      */}
       <Input
         label="Email address"
         type="email"
         value={user.email}
         readOnly
-        disabled
+        className="cursor-default bg-surface-subtle"
         hint="Your email address cannot be changed."
       />
 
@@ -210,18 +203,24 @@ function EmailRow({ user }: { user: User }) {
           tone="warning"
           title="Email not verified"
           action={
-            <Button
-              size="sm"
-              variant="secondary"
-              loading={resendMutation.isPending}
-              disabled={cooldown.active}
-              onClick={() => resendMutation.mutate(user.email)}
-            >
-              <Mail className="h-4 w-4" aria-hidden />
-              {cooldown.active
-                ? `Resend in ${cooldown.remaining}s`
-                : 'Resend verification email'}
-            </Button>
+            // inline-flex so the button sizes to its content. Alert lays its
+            // children out in a column, which stretched this to the alert's
+            // full width while the identical control in the banner above the
+            // page sat at its natural size.
+            <span className="inline-flex">
+              <Button
+                size="sm"
+                variant="secondary"
+                loading={resend.isPending}
+                disabled={resend.active}
+                onClick={() => resend.resend(user.email)}
+              >
+                <Mail className="h-4 w-4" aria-hidden />
+                {resend.active
+                  ? `Resend in ${resend.remaining}s`
+                  : 'Resend verification email'}
+              </Button>
+            </span>
           }
         >
           <p>
@@ -259,39 +258,18 @@ function ThemeCard() {
         Saved on this device. It applies immediately and is not synced to your account.
       </p>
 
-      <div
-        role="radiogroup"
-        aria-label="Colour theme"
-        className="mt-md grid gap-xs sm:grid-cols-3"
-      >
-        {THEMES.map(({ value, label, hint, Icon }) => (
-          <button
-            key={value}
-            type="button"
-            role="radio"
-            aria-checked={theme === value}
-            onClick={() => setTheme(value)}
-            className={cn(
-              'flex items-start gap-xs rounded-md border p-sm text-left transition-colors',
-              theme === value
-                ? 'border-primary-600 bg-primary-50'
-                : 'border-border-subtle hover:border-border-strong'
-            )}
-          >
-            <Icon
-              className={cn(
-                'mt-3xs h-4 w-4 shrink-0',
-                theme === value ? 'text-primary-text' : 'text-content-tertiary'
-              )}
-              aria-hidden
-            />
-            <span className="flex flex-col">
-              <span className="text-label-lg text-content-primary">{label}</span>
-              <span className="text-body-sm text-content-secondary">{hint}</span>
-            </span>
-          </button>
-        ))}
-      </div>
+      <RadioCards
+        label="Colour theme"
+        value={theme}
+        onChange={setTheme}
+        className="mt-md sm:grid-cols-3"
+        options={THEMES.map(({ value, label, hint, Icon }) => ({
+          value,
+          label,
+          hint,
+          icon: <Icon className="h-4 w-4" />,
+        }))}
+      />
     </Card>
   );
 }

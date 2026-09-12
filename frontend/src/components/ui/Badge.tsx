@@ -15,14 +15,18 @@ const TONES: Record<Tone, string> = {
 export function Badge({
   tone = 'neutral',
   icon,
+  title,
   children,
 }: {
   tone?: Tone;
   icon?: ReactNode;
+  /** Hover text, for a badge whose label is an abbreviation of something longer. */
+  title?: string;
   children: ReactNode;
 }) {
   return (
     <span
+      title={title}
       className={cn(
         'inline-flex items-center gap-2xs rounded-sm border px-xs py-3xs text-label-md',
         TONES[tone]

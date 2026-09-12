@@ -86,6 +86,15 @@ export default function App() {
             <Route path="profile" element={<SettingsProfilePage />} />
             <Route path="security" element={<SettingsSecurityPage />} />
           </Route>
+
+          {/*
+            Unmatched /app paths resolve here rather than falling through to the
+            top-level catch-all, which sits outside both the guard and the shell.
+            A signed-in user who mistyped a URL or followed a stale bookmark
+            landed on the bare marketing 404 with no navigation at all, which
+            reads as having been signed out.
+          */}
+          <Route path="*" element={<NotFoundPage inShell />} />
         </Route>
       </Route>
 

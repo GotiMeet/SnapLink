@@ -8,6 +8,7 @@ import { ProjectCard } from '@/components/projects/ProjectCard';
 import { RenameProjectModal } from '@/components/projects/RenameProjectModal';
 import { Alert } from '@/components/ui/Alert';
 import { Button } from '@/components/ui/Button';
+import { Card } from '@/components/ui/Card';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Input } from '@/components/ui/Input';
 import { Skeleton } from '@/components/ui/Skeleton';
@@ -164,16 +165,19 @@ export function ProjectsPage() {
           </div>
 
           {visible.length === 0 ? (
-            <EmptyState
-              icon={<SearchX className="h-8 w-8" aria-hidden />}
-              title="No matching projects found"
-              description="Clear your search term to see all projects."
-              action={
-                <Button variant="secondary" onClick={() => setSearch('')}>
-                  Clear search
-                </Button>
-              }
-            />
+            /* Carded: this replaces the grid, not the page. */
+            <Card className="p-lg">
+              <EmptyState
+                icon={<SearchX className="h-8 w-8" aria-hidden />}
+                title="No matching projects found"
+                description="Clear your search term to see all projects."
+                action={
+                  <Button variant="secondary" onClick={() => setSearch('')}>
+                    Clear search
+                  </Button>
+                }
+              />
+            </Card>
           ) : (
             <>
               {/* Result count for assistive tech, which cannot see the grid shrink. */}
